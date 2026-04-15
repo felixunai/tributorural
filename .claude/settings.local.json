@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/aluz_/Downloads/**)",
+      "Bash(mv tributorural/CLAUDE.md /tmp/CLAUDE_backup.md)",
+      "Bash(npx create-next-app@latest tributorural --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack)"
+    ]
+  }
+}
