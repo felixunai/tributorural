@@ -4,84 +4,74 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack
 
-- **Framework**: Next.js (App Router) with TypeScript
-- **Database**: PostgreSQL via Prisma ORM
-- **Auth**: NextAuth.js
-- **Styling**: Tailwind CSS
+- **Framework**: Next.js 16 (App Router) with TypeScript
+- **Database**: PostgreSQL via Prisma ORM v7 (adapter pattern — `@prisma/adapter-pg`)
+- **Auth**: NextAuth.js v5 (beta) — JWT strategy, Credentials + Google OAuth
+- **Styling**: Tailwind CSS v4 + shadcn/ui v4 (uses `@base-ui/react` primitives, NOT Radix UI, except `@radix-ui/react-slot` for `asChild` on Button)
+- **Payments**: Stripe subscriptions (FREE / PRO / ENTERPRISE)
+- **Charts**: Recharts
+- **Forms**: React Hook Form + Zod v4
 
 ## Commands
 
 ```bash
-# Install dependencies
-npm install
+npm install           # Install dependencies
+npm run dev           # Dev server (http://localhost:3000)
+npm run build         # Production build
+npm run lint          # ESLint
+npx tsc --noEmit      # Type-check only
 
-# Run dev server (http://localhost:3000)
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Lint
-npm run lint
-
-# Type-check
-npx tsc --noEmit
-
-# Prisma: generate client after schema changes
-npx prisma generate
-
-# Prisma: create and apply a migration
-npx prisma migrate dev --name <migration-name>
-
-# Prisma: push schema changes without a migration (dev only)
-npx prisma db push
-
-# Prisma: open database browser
-npx prisma studio
+npx prisma generate              # Regenerate client after schema changes
+npx prisma migrate dev --name X  # Create and apply a migration
+npx prisma db push               # Push schema without migration (dev only)
+npx prisma db seed               # Seed reference data + admin user
+npx prisma studio                # Database browser GUI
 ```
 
 ## Architecture
 
-### Directory layout
+### Route groups
 
 ```
-src/
-  app/                  # Next.js App Router — each folder is a route segment
-    api/                # Route handlers (server-side API endpoints)
-      auth/[...nextauth]/  # NextAuth catch-all handler
-    (auth)/             # Route group for auth pages (sign-in, sign-up)
-    (dashboard)/        # Route group for protected pages
-    layout.tsx          # Root layout — wraps every page
-    page.tsx            # Home page
-  components/           # Shared React components
-  lib/
-    prisma.ts           # Singleton Prisma client (import from here everywhere)
-    auth.ts             # NextAuth config and helpers
-  types/                # Shared TypeScript types / interfaces
-prisma/
-  schema.prisma         # Database schema — source of truth for models
-  migrations/           # Auto-generated migration files (commit these)
+(public)/           → /login, /register, /pricing
+(app)/              → /dashboard, /calculadora-rural, /calculadora-rh, /historico, /configuracoes
+(admin)/admin/      → /admin, /admin/usuarios, /admin/produtos, /admin/aliquotas-icms, /admin/planos
+src/app/page.tsx    → Landing page (NOT inside a group — avoids route conflict)
 ```
 
 ### Key patterns
 
-**Prisma client** — always import the singleton from `src/lib/prisma.ts` to avoid exhausting connections in dev (Next.js hot-reload creates new module instances).
+**Prisma v7 adapter** — `src/lib/prisma.ts` creates `PrismaClient` with `PrismaPg` adapter. The schema's datasource block has NO `url` field; connection string comes from `DATABASE_URL` env at runtime via the adapter. Always import the singleton from `src/lib/prisma.ts`.
 
-**NextAuth session** — the session is available server-side via `getServerSession(authOptions)` and client-side via the `useSession()` hook. `authOptions` is defined in `src/lib/auth.ts` and re-used by both the API route handler and server components.
+**Prisma v7 enum types** — Enums are NOT exported from `@prisma/client` before `prisma generate` runs. Shared type aliases live in `src/types/prisma.ts` (string unions). Seed.ts imports enums directly from `@prisma/client` after generate.
 
-**Route protection** — protect server components by calling `getServerSession` at the top and redirecting if null. Protect API routes the same way or use NextAuth's built-in middleware (`middleware.ts` at the project root with a `matcher` config).
+**NextAuth JWT** — Token embeds `role`, `isBlocked`, `planTier`, `subStatus` (see `src/lib/auth.ts`). This avoids a DB query on every request. Augmented types in `src/types/next-auth.d.ts`.
 
-**Server vs. client components** — components are server components by default in the App Router. Add `"use client"` only when you need browser APIs, event handlers, or React hooks. Keep data fetching in server components and pass data down as props.
+**shadcn/ui + Base UI** — Components use `@base-ui/react/*` primitives (Dialog, Select, Menu, etc.). These do NOT support the `asChild` prop. Use `render` prop or avoid `asChild` entirely. The only `asChild`-capable component is `Button` (uses `@radix-ui/react-slot`).
 
-**Environment variables** — Next.js exposes only `NEXT_PUBLIC_*` vars to the browser. Database URLs, auth secrets, and API keys must not have that prefix.
+**Plan-gating** — `src/components/shared/SubscriptionGate.tsx` wraps features requiring PRO/ENTERPRISE. Always check `session.user.planTier` server-side in API routes too.
+
+**Calculation functions** — Pure functions in `src/lib/tax/ruralTax.ts` and `src/lib/tax/rhClt.ts`. No React, fully testable.
+
+**Stripe lazy init** — `src/lib/stripe.ts` uses a Proxy to lazily initialize the Stripe client, avoiding build-time failures when `STRIPE_SECRET_KEY` is absent.
+
+### Brazilian tax rules implemented
+
+- **ICMS inter-state**: 7% from developed states (SP/RJ/MG/RS/PR/SC/GO/DF/ES/MT/MS/RO/TO/AM) to SP/RJ; 12% otherwise. Seeded as 702 pairs (27×26).
+- **PIS/COFINS**: 0% for primary rural products (Lei 10.925/2004); exceptions for processed products.
+- **FUNRURAL**: 1.2% for Pessoa Física, 1.5% for Pessoa Jurídica.
+- **CLT payroll costs**: INSS 20%, FGTS 8%, 13° salary 8.33%/mo, Férias+1/3 11.11%/mo, RAT/FAP variable, Sistema S 3.3%.
 
 ### Required environment variables
 
 ```
-DATABASE_URL=           # PostgreSQL connection string
-NEXTAUTH_SECRET=        # Random secret for NextAuth (generate with: openssl rand -base64 32)
-NEXTAUTH_URL=           # Full URL of the app (e.g. http://localhost:3000)
+DATABASE_URL=           # PostgreSQL connection string (e.g. postgresql://user:pass@host:5432/db)
+NEXTAUTH_SECRET=        # Random secret (openssl rand -base64 32)
+NEXTAUTH_URL=           # Full app URL (e.g. http://localhost:3000)
+GOOGLE_CLIENT_ID=       # Optional — Google OAuth
+GOOGLE_CLIENT_SECRET=   # Optional — Google OAuth
+STRIPE_SECRET_KEY=      # Stripe secret key (sk_test_... for dev)
+STRIPE_PUBLISHABLE_KEY= # Stripe publishable key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Same key, exposed to browser
+STRIPE_WEBHOOK_SECRET=  # Stripe webhook signing secret (whsec_...)
 ```
