@@ -2,31 +2,65 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL_MS = 30 * 60 * 1000;
 
-// Commodity config: symbol → label, unit, and conversion to BRL
-// Prices come in USX (US cents) per their respective unit from Yahoo Finance
-const COMMODITIES = [
-  // symbol     label          unit          factor (converts USX → BRL/unit)
-  // factor = (1/100) * bushels_or_lbs_per_unit  — applied after * USD/BRL rate
-  { symbol: "BRL=X", label: "Dólar",   unit: "USD",      isFx: true  },
-  { symbol: "ZS=F",  label: "Soja",    unit: "sc 60kg",  lbPerUnit: null,  bushelPerUnit: 2.2046 },
-  { symbol: "ZC=F",  label: "Milho",   unit: "sc 60kg",  lbPerUnit: null,  bushelPerUnit: 2.3622 },
-  { symbol: "ZW=F",  label: "Trigo",   unit: "sc 60kg",  lbPerUnit: null,  bushelPerUnit: 2.2046 },
-  { symbol: "KC=F",  label: "Café",    unit: "sc 60kg",  lbPerUnit: 132.277, bushelPerUnit: null },
-  { symbol: "SB=F",  label: "Açúcar",  unit: "sc 50kg",  lbPerUnit: 110.231, bushelPerUnit: null },
-  { symbol: "CT=F",  label: "Algodão", unit: "@ 15kg",   lbPerUnit: 33.069,  bushelPerUnit: null },
-  { symbol: "LE=F",  label: "Boi",     unit: "@ 15kg",   lbPerUnit: 33.069,  bushelPerUnit: null },
+// ─── B3 (BRL direct) ───────────────────────────────────────────────
+// Month codes used by B3 futures contracts
+const B3_MONTH_CODES = ["F","G","H","J","K","M","N","Q","U","V","X","Z"];
+
+const B3_ROOTS = [
+  { root: "BGI", label: "Boi Gordo", unit: "R$/arroba" },
+  { root: "CCM", label: "Milho",     unit: "R$/sc 60kg" },
+  { root: "ICF", label: "Café",      unit: "R$/sc 60kg" },
+  { root: "ETH", label: "Etanol",    unit: "R$/m³" },
 ] as const;
 
-type CommodityRow = {
-  symbol: string;
-  label: string;
-  unit: string;
-  price: number;
-  variation: number;
-  isFx?: boolean;
-};
+async function fetchB3Symbol(symbol: string) {
+  const url = `https://cotacao.b3.com.br/mds/api/v1/InstrumentQuotation/${symbol}`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; TributoRural/1.0)" },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  if (json?.BizSts?.cd !== "OK") return null;
+  const scty = json?.Trad?.[0]?.scty;
+  if (!scty?.SctyQtn?.curPrc) return null;
+  return {
+    symbol: scty.symb as string,
+    price: scty.SctyQtn.curPrc as number,
+    variation: scty.SctyQtn.prcFlcn as number, // already in % (e.g. -0.11 = -0.11%)
+  };
+}
+
+async function findFrontMonthB3(root: string) {
+  const now = new Date();
+  const monthIndex = now.getMonth(); // 0–11
+  const year = now.getFullYear();
+
+  // Build 6 candidate symbols starting from current month
+  const candidates = Array.from({ length: 6 }, (_, i) => {
+    const mi = (monthIndex + i) % 12;
+    const yr = year + Math.floor((monthIndex + i) / 12);
+    return `${root}${B3_MONTH_CODES[mi]}${String(yr).slice(-2)}`;
+  });
+
+  // Try all 6 in parallel, return nearest month that is OK
+  const results = await Promise.allSettled(candidates.map(fetchB3Symbol));
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value) return r.value;
+  }
+  return null;
+}
+
+// ─── Yahoo Finance / CBOT / ICE (USD → BRL) ─────────────────────────
+const YAHOO_COMMODITIES = [
+  { symbol: "BRL=X",  label: "Dólar",   unit: "R$/USD",    isFx: true,  lbPerUnit: null, bushelPerUnit: null },
+  { symbol: "ZS=F",   label: "Soja",    unit: "sc 60kg",   isFx: false, lbPerUnit: null, bushelPerUnit: 2.2046 },
+  { symbol: "ZW=F",   label: "Trigo",   unit: "sc 60kg",   isFx: false, lbPerUnit: null, bushelPerUnit: 2.2046 },
+  { symbol: "SB=F",   label: "Açúcar",  unit: "sc 50kg",   isFx: false, lbPerUnit: 110.231, bushelPerUnit: null },
+  { symbol: "CT=F",   label: "Algodão", unit: "arroba",    isFx: false, lbPerUnit: 33.069,  bushelPerUnit: null },
+] as const;
 
 async function fetchYahoo(symbol: string) {
   const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
@@ -37,65 +71,87 @@ async function fetchYahoo(symbol: string) {
   if (!res.ok) throw new Error(`Yahoo ${symbol}: ${res.status}`);
   const json = await res.json();
   const meta = json?.chart?.result?.[0]?.meta;
-  if (!meta) throw new Error(`Yahoo ${symbol}: no meta`);
+  if (!meta?.regularMarketPrice) throw new Error(`Yahoo ${symbol}: no data`);
   return {
     price: meta.regularMarketPrice as number,
     prev: (meta.chartPreviousClose ?? meta.regularMarketPreviousClose ?? meta.regularMarketPrice) as number,
   };
 }
 
+// ─── Result shape ────────────────────────────────────────────────────
+export type CommodityRow = {
+  symbol: string;
+  label: string;
+  unit: string;
+  price: number;
+  variation: number;
+  source: "B3" | "CBOT" | "ICE" | "FX";
+};
+
 async function buildData(): Promise<CommodityRow[]> {
-  // Fetch all in parallel
-  const fetches = await Promise.allSettled(
-    COMMODITIES.map((c) => fetchYahoo(c.symbol))
-  );
-
-  // Get USD/BRL rate first (first item is BRL=X)
-  const fxResult = fetches[0];
-  const usdBrl = fxResult.status === "fulfilled" ? fxResult.value.price : 5.0;
-
   const rows: CommodityRow[] = [];
 
-  for (let i = 0; i < COMMODITIES.length; i++) {
-    const cfg = COMMODITIES[i];
-    const result = fetches[i];
-    if (result.status === "rejected") continue;
+  // ── B3 contracts ──
+  const b3Results = await Promise.allSettled(
+    B3_ROOTS.map((c) => findFrontMonthB3(c.root).then((r) => ({ cfg: c, r })))
+  );
+  for (const res of b3Results) {
+    if (res.status === "rejected" || !res.value.r) continue;
+    const { cfg, r } = res.value;
+    rows.push({
+      symbol: r.symbol,
+      label: cfg.label,
+      unit: cfg.unit,
+      price: parseFloat(r.price.toFixed(2)),
+      variation: parseFloat(r.variation.toFixed(2)),
+      source: "B3",
+    });
+  }
 
-    const { price: rawPrice, prev: rawPrev } = result.value;
-    const variation = rawPrev !== 0 ? ((rawPrice - rawPrev) / rawPrev) * 100 : 0;
+  // ── Yahoo Finance ──
+  const yahooResults = await Promise.allSettled(
+    YAHOO_COMMODITIES.map((c) => fetchYahoo(c.symbol))
+  );
 
-    if ("isFx" in cfg && cfg.isFx) {
-      // BRL=X: price IS the BRL value, variation as %
+  // BRL=X rate for conversions (first item)
+  const fxRes = yahooResults[0];
+  const usdBrl = fxRes.status === "fulfilled" ? fxRes.value.price : 5.0;
+
+  for (let i = 0; i < YAHOO_COMMODITIES.length; i++) {
+    const cfg = YAHOO_COMMODITIES[i];
+    const res = yahooResults[i];
+    if (res.status === "rejected") continue;
+
+    const { price: raw, prev: rawPrev } = res.value;
+    const variation = rawPrev !== 0 ? ((raw - rawPrev) / rawPrev) * 100 : 0;
+
+    if (cfg.isFx) {
       rows.push({
         symbol: cfg.symbol,
         label: cfg.label,
         unit: cfg.unit,
-        price: rawPrice,
+        price: parseFloat(raw.toFixed(4)),
         variation: parseFloat(variation.toFixed(2)),
-        isFx: true,
+        source: "FX",
       });
       continue;
     }
 
-    // Convert USX → BRL
-    // rawPrice is in US cents per (bushel or lb)
-    const priceUSD = rawPrice / 100;
+    // USX → BRL
+    const priceUSD = raw / 100;
     const prevUSD = rawPrev / 100;
+    let priceBRL: number, prevBRL: number;
 
-    let priceBRL: number;
-    let prevBRL: number;
-
-    if ("bushelPerUnit" in cfg && cfg.bushelPerUnit) {
+    if (cfg.bushelPerUnit) {
       priceBRL = priceUSD * usdBrl * cfg.bushelPerUnit;
-      prevBRL = prevUSD * usdBrl * cfg.bushelPerUnit;
-    } else if ("lbPerUnit" in cfg && cfg.lbPerUnit) {
+      prevBRL  = prevUSD  * usdBrl * cfg.bushelPerUnit;
+    } else if (cfg.lbPerUnit) {
       priceBRL = priceUSD * usdBrl * cfg.lbPerUnit;
-      prevBRL = prevUSD * usdBrl * cfg.lbPerUnit;
-    } else {
-      continue;
-    }
+      prevBRL  = prevUSD  * usdBrl * cfg.lbPerUnit;
+    } else continue;
 
     const brlVariation = prevBRL !== 0 ? ((priceBRL - prevBRL) / prevBRL) * 100 : 0;
+    const source = ["KC=F","SB=F","CT=F"].includes(cfg.symbol) ? "ICE" : "CBOT";
 
     rows.push({
       symbol: cfg.symbol,
@@ -103,18 +159,19 @@ async function buildData(): Promise<CommodityRow[]> {
       unit: cfg.unit,
       price: parseFloat(priceBRL.toFixed(2)),
       variation: parseFloat(brlVariation.toFixed(2)),
+      source,
     });
   }
 
   return rows;
 }
 
-// GET — serve from cache if fresh, otherwise fetch
+// ─── API Handlers ────────────────────────────────────────────────────
 export async function GET() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!["PRO", "ENTERPRISE"].includes(session.user.planTier)) {
-    return NextResponse.json({ error: "Plano PRO necessário" }, { status: 403 });
+    return NextResponse.json({ error: "PRO required" }, { status: 403 });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,19 +191,16 @@ export async function GET() {
     });
     return NextResponse.json({ data, fetchedAt, stale: false });
   } catch {
-    if (cached) {
-      return NextResponse.json({ data: cached.data, fetchedAt: cached.fetchedAt, stale: true });
-    }
+    if (cached) return NextResponse.json({ data: cached.data, fetchedAt: cached.fetchedAt, stale: true });
     return NextResponse.json({ error: "Erro ao buscar cotações" }, { status: 502 });
   }
 }
 
-// POST — force refresh
 export async function POST() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!["PRO", "ENTERPRISE"].includes(session.user.planTier)) {
-    return NextResponse.json({ error: "Plano PRO necessário" }, { status: 403 });
+    return NextResponse.json({ error: "PRO required" }, { status: 403 });
   }
 
   try {
@@ -161,7 +215,7 @@ export async function POST() {
     return NextResponse.json({ data, fetchedAt, stale: false });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro ao atualizar cotações" },
+      { error: err instanceof Error ? err.message : "Erro ao atualizar" },
       { status: 502 }
     );
   }

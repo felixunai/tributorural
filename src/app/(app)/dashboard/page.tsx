@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Calculator, Users, TrendingUp, ArrowRight, FileX2 } from "lucide-react";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
 import { RecentCalculationsSection } from "@/components/dashboard/RecentCalculationsSection";
-import { CommodityTicker } from "@/components/dashboard/CommodityTicker";
+import { CommodityTicker, CommodityTickerLocked } from "@/components/dashboard/CommodityTicker";
 import { format } from "date-fns";
 import type { Metadata } from "next";
 
@@ -74,8 +74,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Commodity ticker — PRO+ only */}
-      {isPro && <CommodityTicker />}
+      {/* Commodity ticker */}
+      {isPro ? <CommodityTicker /> : <CommodityTickerLocked />}
 
       <div>
         <h1 className="text-2xl font-bold">
