@@ -16,7 +16,6 @@ export async function GET(req: Request) {
   const skip = (page - 1) * limit;
 
   const where = {
-    role: "USER" as const,
     ...(search
       ? {
           OR: [
@@ -37,6 +36,7 @@ export async function GET(req: Request) {
         id: true,
         name: true,
         email: true,
+        role: true,
         isBlocked: true,
         createdAt: true,
         _count: { select: { calculations: true } },
