@@ -26,6 +26,7 @@ interface User {
   id: string;
   name: string | null;
   email: string;
+  role: "USER" | "ADMIN";
   isBlocked: boolean;
   createdAt: string;
   _count: { calculations: number };
@@ -65,12 +66,14 @@ export function UsersTable() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         page: String(page),
@@ -79,11 +82,17 @@ export function UsersTable() {
         ...(planFilter !== "ALL" ? { plan: planFilter } : {}),
       });
       const res = await fetch(`/api/admin/users?${params}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? `Erro ${res.status}`);
+        return;
+      }
       const data = await res.json();
       setUsers(data.users);
       setTotal(data.total);
       setTotalPages(data.totalPages);
+    } catch (e) {
+      setError("Falha ao carregar usuários");
     } finally {
       setLoading(false);
     }
@@ -194,6 +203,15 @@ export function UsersTable() {
         <span>{total} usuário{total !== 1 ? "s" : ""} encontrado{total !== 1 ? "s" : ""}</span>
       </div>
 
+      {/* Error */}
+      {error && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="py-4 text-sm text-destructive flex items-center gap-2">
+            <span className="font-medium">Erro ao carregar:</span> {error}
+          </CardContent>
+        </Card>
+      )}
+
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
@@ -226,6 +244,9 @@ export function UsersTable() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-sm">{user.name ?? "Sem nome"}</p>
+                          {user.role === "ADMIN" && (
+                            <Badge className="text-xs px-1.5 py-0 bg-violet-100 text-violet-700 border-violet-200">Admin</Badge>
+                          )}
                           {user.isBlocked && (
                             <Badge variant="destructive" className="text-xs px-1.5 py-0">Bloqueado</Badge>
                           )}
