@@ -40,7 +40,7 @@ const saveSchema = z.object({
 
 const MONTHLY_SAVE_LIMIT: Record<string, number | null> = {
   FREE: 0,
-  PRO: 5,
+  PRO: null, // unlimited
   ENTERPRISE: null, // unlimited
 };
 
@@ -141,7 +141,7 @@ export async function GET(req: Request) {
 
   // Apply history retention filter
   const retentionDays =
-    session.user.planTier === "ENTERPRISE" ? -1 : 90;
+    ["PRO", "ENTERPRISE"].includes(session.user.planTier) ? -1 : 90;
 
   const dateFilter =
     retentionDays > 0

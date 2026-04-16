@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 const MONTHLY_LIMIT: Record<string, number | null> = {
   FREE: 0,
-  PRO: 5,
+  PRO: null, // unlimited
   ENTERPRISE: null, // unlimited
 };
 

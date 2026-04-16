@@ -129,7 +129,7 @@ export function HistoricoClient() {
   }
 
   const canExportCsv = ["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "");
-  const canExportPdf = session?.user.planTier === "ENTERPRISE";
+  const canExportPdf = ["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "");
 
   return (
     <div className="space-y-4">

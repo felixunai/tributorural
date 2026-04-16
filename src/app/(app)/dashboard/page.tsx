@@ -55,7 +55,7 @@ export default async function DashboardPage() {
   const planLabels: Record<string, string> = {
     FREE: "Gratuito",
     PRO: "Profissional",
-    ENTERPRISE: "Empresarial",
+    ENTERPRISE: "Profissional",
   };
   const planLabel = planLabels[session!.user.planTier];
 
@@ -214,14 +214,14 @@ export default async function DashboardPage() {
         })()}
 
         {(() => {
-          const rescisaoLocked = session!.user.planTier !== "ENTERPRISE";
+          const rescisaoLocked = !["PRO", "ENTERPRISE"].includes(session!.user.planTier);
           return (
             <Card className={rescisaoLocked ? "opacity-70" : "border-orange-500/30 bg-orange-500/5"}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <FileX2 className="h-5 w-5 text-orange-600" />
                   Rescisão CLT
-                  {rescisaoLocked && <Badge variant="secondary" className="text-xs">ENTERPRISE</Badge>}
+                  {rescisaoLocked && <Badge variant="secondary" className="text-xs">PRO</Badge>}
                 </CardTitle>
                 <CardDescription>
                   Calcule todos os valores devidos ao funcionário no momento do desligamento.

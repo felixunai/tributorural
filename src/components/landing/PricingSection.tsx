@@ -26,7 +26,7 @@ const plans = [
       "Calculadora de Custo CLT",
       "Histórico de cálculos",
       "Exportar CSV/PDF",
-      "Suporte prioritário",
+      "Cotações de commodities",
     ],
     cta: "Começar grátis",
     highlighted: false,
@@ -36,40 +36,22 @@ const plans = [
   {
     name: "Profissional",
     tier: "PRO",
-    monthlyPrice: 49.9,
-    yearlyPrice: 479,
+    monthlyPrice: 29.9,
+    yearlyPrice: 290,
     description: "Para produtores e consultores rurais",
     features: [
       "Calculadora Rural ilimitada",
       "Calculadora de Custo CLT",
-      "Histórico de 90 dias",
-      "Exportar CSV",
+      "Histórico completo ilimitado",
+      "Exportar CSV e PDF",
+      "Cotações de commodities B3/CBOT",
       "Suporte por email",
     ],
-    excluded: ["Exportar PDF"],
+    excluded: [],
     cta: "Assinar Profissional",
     highlighted: true,
     stripePriceMonthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY ?? "",
     stripePriceYearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY ?? "",
-  },
-  {
-    name: "Empresarial",
-    tier: "ENTERPRISE",
-    monthlyPrice: 149.9,
-    yearlyPrice: 1439,
-    description: "Para empresas e escritórios contábeis",
-    features: [
-      "Tudo do plano Profissional",
-      "Histórico completo ilimitado",
-      "Exportar PDF e CSV",
-      "Suporte prioritário",
-      "Multi-usuário (em breve)",
-    ],
-    excluded: [],
-    cta: "Assinar Empresarial",
-    highlighted: false,
-    stripePriceMonthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE_MONTHLY ?? "",
-    stripePriceYearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE_YEARLY ?? "",
   },
 ];
 
@@ -148,7 +130,7 @@ export function PricingSection() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto items-start">
           {plans.map((plan) => (
             <div
               key={plan.tier}

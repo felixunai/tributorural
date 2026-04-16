@@ -61,7 +61,15 @@ export async function POST(req: Request) {
   ]);
 
   if (!product) return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
-  if (!icmsRate) return NextResponse.json({ error: "Alíquota ICMS não encontrada" }, { status: 404 });
+  if (!icmsRate) {
+    if (originState === destState) {
+      return NextResponse.json(
+        { error: "Para vendas intraestaduais (mesmo estado), utilize a alíquota interna do seu estado (geralmente 17% ou 18%). Esta calculadora é voltada para operações interestaduais." },
+        { status: 422 }
+      );
+    }
+    return NextResponse.json({ error: "Alíquota ICMS não encontrada para os estados selecionados" }, { status: 404 });
+  }
   if (!funrural) return NextResponse.json({ error: "Taxa FUNRURAL não encontrada" }, { status: 404 });
 
   const result = calculateRuralTax({

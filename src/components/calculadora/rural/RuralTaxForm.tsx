@@ -20,7 +20,10 @@ const schema = z.object({
   destState: z.string().min(1, "Selecione o estado de destino"),
   saleValue: z.string().min(1, "Informe o valor de venda"),
   funruralType: z.enum(["funrural-pf", "funrural-pj"]),
-});
+}).refine(
+  (d) => d.originState === "" || d.destState === "" || d.originState !== d.destState,
+  { message: "Estado de destino deve ser diferente do estado de origem", path: ["destState"] }
+);
 
 type FormData = z.infer<typeof schema>;
 
@@ -46,7 +49,13 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { funruralType: "funrural-pf" },
+    defaultValues: {
+      productId: "",
+      originState: "",
+      destState: "",
+      saleValue: "",
+      funruralType: "funrural-pf",
+    },
   });
 
   useEffect(() => {

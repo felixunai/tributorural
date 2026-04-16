@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type") as "RURAL_TAX" | "RH_CLT" | null;
 
-  const retentionDays = session.user.planTier === "ENTERPRISE" ? -1 : 90;
+  const retentionDays = ["PRO", "ENTERPRISE"].includes(session.user.planTier) ? -1 : 90;
   const dateFilter =
     retentionDays > 0
       ? { createdAt: { gte: new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000) } }

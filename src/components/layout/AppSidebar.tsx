@@ -24,7 +24,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calculadora-rural", label: "Impostos Rurais", icon: Calculator },
   { href: "/calculadora-rh", label: "Cálculo CLT", icon: Users, requiredPlan: "PRO" as PlanTier },
-  { href: "/calculadora-rescisao", label: "Rescisão CLT", icon: FileX2, requiredPlan: "ENTERPRISE" as PlanTier },
+  { href: "/calculadora-rescisao", label: "Rescisão CLT", icon: FileX2, requiredPlan: "PRO" as PlanTier },
   { href: "/historico", label: "Histórico", icon: History, requiredPlan: "PRO" as PlanTier },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
@@ -166,8 +166,7 @@ function SidebarContent({
           <p className="text-xs font-medium text-muted-foreground">Plano atual</p>
           <p className="text-sm font-semibold mt-0.5">
             {planTier === "FREE" && "Gratuito"}
-            {planTier === "PRO" && "Profissional"}
-            {planTier === "ENTERPRISE" && "Empresarial"}
+            {(planTier === "PRO" || planTier === "ENTERPRISE") && "Profissional"}
           </p>
           {planTier === "FREE" && (
             <Link

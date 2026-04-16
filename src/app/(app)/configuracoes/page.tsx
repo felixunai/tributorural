@@ -36,7 +36,7 @@ export default async function ConfiguracoesPage() {
   const planLabels: Record<string, string> = {
     FREE: "Gratuito",
     PRO: "Profissional",
-    ENTERPRISE: "Empresarial",
+    ENTERPRISE: "Profissional",
   };
   const planLabel = planLabels[session.user.planTier] ?? session.user.planTier;
 

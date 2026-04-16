@@ -16,8 +16,8 @@ const schema = z.object({
 export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (session.user.planTier !== "ENTERPRISE") {
-    return NextResponse.json({ error: "Requer plano Empresarial" }, { status: 403 });
+  if (!["PRO", "ENTERPRISE"].includes(session.user.planTier)) {
+    return NextResponse.json({ error: "Requer plano Profissional" }, { status: 403 });
   }
 
   const body = await req.json();

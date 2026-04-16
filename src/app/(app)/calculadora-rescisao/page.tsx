@@ -45,7 +45,7 @@ export default function CalculadoraRescisaoPage() {
         </p>
       </div>
 
-      <SubscriptionGate requiredPlan="ENTERPRISE" featureName="Calculadora de Rescisão">
+      <SubscriptionGate requiredPlan="PRO" featureName="Calculadora de Rescisão">
         <RescisaoForm onResult={(r, s) => { setResult(r); setSnapshot(s); }} />
 
         {result && (
@@ -53,7 +53,7 @@ export default function CalculadoraRescisaoPage() {
             <RescisaoResult
               result={result}
               onSave={() => setSaveOpen(true)}
-              canSave={session?.user.planTier === "ENTERPRISE"}
+              canSave={["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "")}
             />
             <SaveCalculationModal
               open={saveOpen}

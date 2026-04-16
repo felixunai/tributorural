@@ -115,7 +115,7 @@ export function SaveCalculationModal({
                   <Badge variant="secondary" className="ml-2 text-xs">{quota.plan}</Badge>
                 </p>
               ) : (
-                <p>Salvamentos ilimitados <Badge variant="secondary" className="ml-2 text-xs">ENTERPRISE</Badge></p>
+                <p>Salvamentos ilimitados <Badge variant="secondary" className="ml-2 text-xs">PRO</Badge></p>
               )}
             </div>
           </div>
