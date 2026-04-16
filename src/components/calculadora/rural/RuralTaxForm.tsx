@@ -107,28 +107,35 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
             <Controller
               name="productId"
               control={control}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={(v) => { if (v !== null) field.onChange(v); }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o produto..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(grouped).map(([cat, prods]) => (
-                      <div key={cat}>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          {cat}
+              render={({ field }) => {
+                const selected = products.find((p) => p.id === field.value);
+                return (
+                  <Select value={field.value} onValueChange={(v) => { if (v !== null) field.onChange(v); }}>
+                    <SelectTrigger>
+                      {selected ? (
+                        <span className="flex-1 text-left truncate">{selected.name}</span>
+                      ) : (
+                        <span className="flex-1 text-left text-muted-foreground">Selecione o produto...</span>
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(grouped).map(([cat, prods]) => (
+                        <div key={cat}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                            {cat}
+                          </div>
+                          {prods.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              <span>{p.name}</span>
+                              <span className="text-muted-foreground text-xs ml-1">NCM {p.ncmCode}</span>
+                            </SelectItem>
+                          ))}
                         </div>
-                        {prods.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}{" "}
-                            <span className="text-muted-foreground text-xs">NCM {p.ncmCode}</span>
-                          </SelectItem>
-                        ))}
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
             />
             {errors.productId && <p className="text-xs text-destructive">{errors.productId.message}</p>}
           </div>
