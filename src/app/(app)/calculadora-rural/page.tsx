@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { RuralTaxForm } from "@/components/calculadora/rural/RuralTaxForm";
 import { RuralTaxResult } from "@/components/calculadora/rural/RuralTaxResult";
+import { RuralCalcQuotaBanner } from "@/components/calculadora/rural/RuralCalcQuotaBanner";
 import { SaveCalculationModal } from "@/components/shared/SaveCalculationModal";
 import { toast } from "sonner";
 import type { RuralTaxResult as Result } from "@/lib/tax/ruralTax";
@@ -14,17 +15,19 @@ export default function CalculadoraRuralPage() {
   const [snapshot, setSnapshot] = useState<Record<string, unknown>>({});
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [saveOpen, setSaveOpen] = useState(false);
+  const refreshQuotaRef = useRef<() => void>(() => {});
 
-  function handleResult(
-    res: Result,
-    snap: Record<string, unknown>,
-    form: Record<string, unknown>
-  ) {
-    setResult(res);
-    setSnapshot(snap);
-    setFormData(form);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const handleResult = useCallback(
+    (res: Result, snap: Record<string, unknown>, form: Record<string, unknown>) => {
+      setResult(res);
+      setSnapshot(snap);
+      setFormData(form);
+      // Refresh the quota banner after each successful calculation
+      refreshQuotaRef.current();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    []
+  );
 
   async function handleSave(title: string) {
     if (!result) return;
@@ -67,6 +70,11 @@ export default function CalculadoraRuralPage() {
           Calcule ICMS, PIS, COFINS e FUNRURAL para vendas interestaduais de produtos rurais.
         </p>
       </div>
+
+      {/* Quota banner — only visible for FREE plan */}
+      <RuralCalcQuotaBanner
+        onRefreshRef={(fn) => { refreshQuotaRef.current = fn; }}
+      />
 
       <RuralTaxForm onResult={handleResult} />
 

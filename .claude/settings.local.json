@@ -10,7 +10,11 @@
       "Bash(npx tsc *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "WebFetch(domain:query1.finance.yahoo.com)",
+      "WebFetch(domain:query2.finance.yahoo.com)",
+      "WebFetch(domain:br.advfn.com)",
+      "WebFetch(domain:cotacao.b3.com.br)"
     ]
   }
 }

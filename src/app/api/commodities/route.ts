@@ -9,10 +9,12 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 const B3_MONTH_CODES = ["F","G","H","J","K","M","N","Q","U","V","X","Z"];
 
 const B3_ROOTS = [
-  { root: "BGI", label: "Boi Gordo", unit: "R$/arroba" },
-  { root: "CCM", label: "Milho",     unit: "R$/sc 60kg" },
-  { root: "ICF", label: "Café",      unit: "R$/sc 60kg" },
-  { root: "ETH", label: "Etanol",    unit: "R$/m³" },
+  { root: "BGI", label: "Boi Gordo", unit: "R$/arroba",  usdPerUnit: null  },
+  { root: "CCM", label: "Milho",     unit: "R$/sc 60kg", usdPerUnit: null  },
+  { root: "ICF", label: "Café",      unit: "R$/sc 60kg", usdPerUnit: null  },
+  { root: "ETH", label: "Etanol",    unit: "R$/m³",      usdPerUnit: null  },
+  // SJC is quoted in USD/saca on B3 — needs USD→BRL conversion
+  { root: "SJC", label: "Soja",      unit: "R$/sc 60kg", usdPerUnit: true  },
 ] as const;
 
 async function fetchB3Symbol(symbol: string) {
@@ -89,34 +91,45 @@ export type CommodityRow = {
 };
 
 async function buildData(): Promise<CommodityRow[]> {
+  // Fetch B3 contracts and Yahoo Finance in parallel
+  const [b3Results, yahooResults] = await Promise.all([
+    Promise.allSettled(B3_ROOTS.map((c) => findFrontMonthB3(c.root).then((r) => ({ cfg: c, r })))),
+    Promise.allSettled(YAHOO_COMMODITIES.map((c) => fetchYahoo(c.symbol))),
+  ]);
+
+  // USD/BRL rate (BRL=X is first Yahoo item)
+  const fxRes = yahooResults[0];
+  const usdBrl = fxRes.status === "fulfilled" ? fxRes.value.price : 5.0;
+
   const rows: CommodityRow[] = [];
 
   // ── B3 contracts ──
-  const b3Results = await Promise.allSettled(
-    B3_ROOTS.map((c) => findFrontMonthB3(c.root).then((r) => ({ cfg: c, r })))
-  );
   for (const res of b3Results) {
     if (res.status === "rejected" || !res.value.r) continue;
     const { cfg, r } = res.value;
+
+    let price = r.price;
+    let variation = r.variation; // already in %
+
+    // SJC is quoted in USD/saca — convert to BRL
+    if (cfg.usdPerUnit) {
+      price = parseFloat((r.price * usdBrl).toFixed(2));
+      // variation % stays the same (USD price % ≈ BRL price %)
+    } else {
+      price = parseFloat(r.price.toFixed(2));
+    }
+
     rows.push({
       symbol: r.symbol,
       label: cfg.label,
       unit: cfg.unit,
-      price: parseFloat(r.price.toFixed(2)),
-      variation: parseFloat(r.variation.toFixed(2)),
+      price,
+      variation: parseFloat(variation.toFixed(2)),
       source: "B3",
     });
   }
 
-  // ── Yahoo Finance ──
-  const yahooResults = await Promise.allSettled(
-    YAHOO_COMMODITIES.map((c) => fetchYahoo(c.symbol))
-  );
-
-  // BRL=X rate for conversions (first item)
-  const fxRes = yahooResults[0];
-  const usdBrl = fxRes.status === "fulfilled" ? fxRes.value.price : 5.0;
-
+  // ── Yahoo Finance (CBOT / ICE / FX) ──
   for (let i = 0; i < YAHOO_COMMODITIES.length; i++) {
     const cfg = YAHOO_COMMODITIES[i];
     const res = yahooResults[i];
@@ -139,7 +152,7 @@ async function buildData(): Promise<CommodityRow[]> {
 
     // USX → BRL
     const priceUSD = raw / 100;
-    const prevUSD = rawPrev / 100;
+    const prevUSD  = rawPrev / 100;
     let priceBRL: number, prevBRL: number;
 
     if (cfg.bushelPerUnit) {
@@ -151,7 +164,7 @@ async function buildData(): Promise<CommodityRow[]> {
     } else continue;
 
     const brlVariation = prevBRL !== 0 ? ((priceBRL - prevBRL) / prevBRL) * 100 : 0;
-    const source = ["KC=F","SB=F","CT=F"].includes(cfg.symbol) ? "ICE" : "CBOT";
+    const source = ["SB=F", "CT=F"].includes(cfg.symbol) ? "ICE" : "CBOT";
 
     rows.push({
       symbol: cfg.symbol,
