@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { format } from "date-fns";
 
 export async function GET() {
   const session = await auth();
@@ -8,48 +9,45 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
   const [
     totalUsers,
     activeSubscriptions,
     subscriptionsByPlan,
     newUsersLast30Days,
-    calcsByDay,
+    recentCalcs,
     totalCalculations,
+    plans,
   ] = await Promise.all([
-    prisma.user.count({ where: { role: "USER" } }),
-
+    prisma.user.count(),
     prisma.subscription.count({ where: { status: "ACTIVE" } }),
-
     prisma.subscription.groupBy({
       by: ["planId"],
       _count: true,
       where: { status: "ACTIVE" },
     }),
-
     prisma.user.count({
-      where: {
-        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-        role: "USER",
-      },
+      where: { createdAt: { gte: thirtyDaysAgo } },
     }),
-
-    prisma.$queryRaw<{ date: string; count: bigint }[]>`
-      SELECT DATE(created_at)::text as date, COUNT(*)::bigint as count
-      FROM calculations
-      WHERE created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `,
-
+    prisma.calculation.findMany({
+      where: { createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
     prisma.calculation.count(),
+    prisma.plan.findMany({ select: { id: true, name: true, tier: true } }),
   ]);
 
-  // Fetch plan names for the groupBy result
-  const plans = await prisma.plan.findMany({
-    select: { id: true, name: true, tier: true },
-  });
-  const planMap = Object.fromEntries(plans.map((p: { id: string; name: string; tier: string }) => [p.id, p]));
+  // Group by date in JS (avoids $queryRaw BigInt issues)
+  const dayMap: Record<string, number> = {};
+  for (const calc of recentCalcs) {
+    const key = format(calc.createdAt, "yyyy-MM-dd");
+    dayMap[key] = (dayMap[key] ?? 0) + 1;
+  }
+  const calcsByDay = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
 
+  const planMap = Object.fromEntries(plans.map((p) => [p.id, p]));
   const subscriptionDistribution = subscriptionsByPlan.map((s: { planId: string; _count: number }) => ({
     plan: planMap[s.planId]?.name ?? s.planId,
     tier: planMap[s.planId]?.tier ?? "FREE",
@@ -62,9 +60,6 @@ export async function GET() {
     newUsersLast30Days,
     totalCalculations,
     subscriptionDistribution,
-    calcsByDay: calcsByDay.map((r: { date: string; count: bigint }) => ({
-      date: r.date,
-      count: Number(r.count),
-    })),
+    calcsByDay,
   });
 }
