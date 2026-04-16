@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
   Sprout,
   ChevronRight,
   X,
+  LogOut,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PlanTier } from "@prisma/client";
@@ -135,8 +137,8 @@ function SidebarContent({
         })}
       </nav>
 
-      {/* Plan badge */}
-      <div className="p-3 border-t shrink-0">
+      {/* Plan badge + logout */}
+      <div className="p-3 border-t shrink-0 space-y-2">
         <div className="rounded-xl bg-muted px-3 py-3">
           <p className="text-xs font-medium text-muted-foreground">Plano atual</p>
           <p className="text-sm font-semibold mt-0.5">
@@ -154,6 +156,14 @@ function SidebarContent({
             </Link>
           )}
         </div>
+
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Sair
+        </button>
       </div>
     </>
   );
