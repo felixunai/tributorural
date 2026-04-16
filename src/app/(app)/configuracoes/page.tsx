@@ -18,12 +18,18 @@ export default async function ConfiguracoesPage() {
 
   const userId = session.user.id;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      subscription: true,
-    },
-  });
+  let user = null;
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        subscription: true,
+      },
+    });
+  } catch (err) {
+    console.error("[configuracoes] Prisma error:", err);
+    throw err;
+  }
 
   const sub = user?.subscription;
 
