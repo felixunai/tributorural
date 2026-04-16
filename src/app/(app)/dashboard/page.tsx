@@ -153,98 +153,112 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Charts */}
-      <DashboardCharts
-        calcsByDay={calcsByDay}
-        calcsByType={{ ruralCount, rhCount }}
-      />
+      {/* Charts — only for PRO (FREE can't save, so charts are always empty) */}
+      {isPro && (
+        <DashboardCharts
+          calcsByDay={calcsByDay}
+          calcsByType={{ ruralCount, rhCount }}
+        />
+      )}
 
       {/* Quick access */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Calculator className="h-5 w-5 text-primary" />
-              Impostos Rurais
-            </CardTitle>
-            <CardDescription>
-              Calcule ICMS, PIS, COFINS e FUNRURAL para venda interestadual de produtos rurais.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/calculadora-rural">
-                Calcular agora
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      {isPro ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Calculator className="h-5 w-5 text-primary" />
+                Impostos Rurais
+              </CardTitle>
+              <CardDescription>
+                Calcule ICMS, PIS, COFINS e FUNRURAL para venda interestadual de produtos rurais.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link href="/calculadora-rural">
+                  Calcular agora
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
 
-        {(() => {
-          const cltLocked = session!.user.planTier === "FREE";
-          return (
-            <Card className={cltLocked ? "opacity-70" : "border-green-500/30 bg-green-500/5"}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Users className="h-5 w-5 text-green-600" />
-                  Custo CLT
-                  {cltLocked && <Badge variant="secondary" className="text-xs">PRO</Badge>}
-                </CardTitle>
-                <CardDescription>
-                  Descubra o custo real de contratar um funcionário com todos os encargos.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {cltLocked ? (
-                  <Button variant="outline" asChild>
-                    <Link href="/pricing">Upgrade para PRO</Link>
-                  </Button>
-                ) : (
-                  <Button variant="outline" asChild className="border-green-500 text-green-700 hover:bg-green-50">
-                    <Link href="/calculadora-rh">
-                      Calcular agora
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })()}
+          <Card className="border-green-500/30 bg-green-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Users className="h-5 w-5 text-green-600" />
+                Custo CLT
+              </CardTitle>
+              <CardDescription>
+                Descubra o custo real de contratar um funcionário com todos os encargos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" asChild className="border-green-500 text-green-700 hover:bg-green-50">
+                <Link href="/calculadora-rh">
+                  Calcular agora <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
 
-        {(() => {
-          const rescisaoLocked = !["PRO", "ENTERPRISE"].includes(session!.user.planTier);
-          return (
-            <Card className={rescisaoLocked ? "opacity-70" : "border-orange-500/30 bg-orange-500/5"}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileX2 className="h-5 w-5 text-orange-600" />
-                  Rescisão CLT
-                  {rescisaoLocked && <Badge variant="secondary" className="text-xs">PRO</Badge>}
-                </CardTitle>
-                <CardDescription>
-                  Calcule todos os valores devidos ao funcionário no momento do desligamento.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {rescisaoLocked ? (
-                  <Button variant="outline" asChild>
-                    <Link href="/pricing">Upgrade para Empresarial</Link>
-                  </Button>
-                ) : (
-                  <Button variant="outline" asChild className="border-orange-500 text-orange-700 hover:bg-orange-50">
-                    <Link href="/calculadora-rescisao">
-                      Calcular agora
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })()}
-      </div>
+          <Card className="border-orange-500/30 bg-orange-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileX2 className="h-5 w-5 text-orange-600" />
+                Rescisão CLT
+              </CardTitle>
+              <CardDescription>
+                Calcule todos os valores devidos ao funcionário no momento do desligamento.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" asChild className="border-orange-500 text-orange-700 hover:bg-orange-50">
+                <Link href="/calculadora-rescisao">
+                  Calcular agora <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        /* FREE plan — only show the available calculator */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Calculator className="h-5 w-5 text-primary" />
+                Calculadora de Impostos Rurais
+              </CardTitle>
+              <CardDescription>
+                Calcule ICMS, PIS, COFINS e FUNRURAL para venda interestadual de produtos rurais.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link href="/calculadora-rural">
+                  Calcular agora <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-dashed">
+            <CardHeader>
+              <CardTitle className="text-lg text-muted-foreground">Desbloqueie mais funcionalidades</CardTitle>
+              <CardDescription>
+                Calculadora CLT, Rescisão, histórico completo, exportação e cotações de commodities B3/CBOT.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline">
+                <Link href="/pricing">Ver plano PRO →</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Recent calculations */}
       <RecentCalculationsSection items={serializedCalcs} />

@@ -1,17 +1,9 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Settings, LogOut, Shield, Menu } from "lucide-react";
+import { Settings, LogOut, Shield, Menu, ChevronDown } from "lucide-react";
 
 interface TopbarProps {
   onMenuToggle?: () => void;
@@ -19,12 +11,29 @@ interface TopbarProps {
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
   const { data: session } = useSession();
-  const router = useRouter();
   const user = session?.user;
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const initials = user?.name
     ? user.name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()
     : "U";
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function navigate(href: string) {
+    setOpen(false);
+    window.location.href = href;
+  }
 
   return (
     <header className="h-14 md:h-16 border-b bg-card px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20">
@@ -37,14 +46,15 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Spacer on desktop */}
       <div className="hidden lg:block" />
 
-      {/* User menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      {/* User menu — pure React, no Base UI */}
+      <div ref={menuRef} className="relative">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-2 rounded-full px-2 py-1 hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary"
           aria-label="Menu do usuário"
+          aria-expanded={open}
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ""} />
@@ -53,41 +63,48 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
           <span className="hidden md:block text-sm font-medium max-w-[140px] truncate">
             {user?.name ?? user?.email}
           </span>
-        </DropdownMenuTrigger>
+          <ChevronDown className={`hidden md:block h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
 
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-0.5">
+        {open && (
+          <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-popover shadow-lg z-50 py-1 overflow-hidden">
+            {/* User info */}
+            <div className="px-3 py-2 border-b">
               <p className="text-sm font-semibold truncate">{user?.name}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
-          </DropdownMenuLabel>
 
-          <DropdownMenuSeparator />
+            {/* Items */}
+            <button
+              onClick={() => navigate("/configuracoes")}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+            >
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              Configurações
+            </button>
 
-          <DropdownMenuItem onClick={() => router.push("/configuracoes")}>
-            <Settings className="mr-2 h-4 w-4" />
-            Configurações
-          </DropdownMenuItem>
+            {user?.role === "ADMIN" && (
+              <button
+                onClick={() => navigate("/admin")}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+              >
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                Painel Admin
+              </button>
+            )}
 
-          {user?.role === "ADMIN" && (
-            <DropdownMenuItem onClick={() => router.push("/admin")}>
-              <Shield className="mr-2 h-4 w-4" />
-              Painel Admin
-            </DropdownMenuItem>
-          )}
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="text-destructive focus:text-destructive"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <div className="border-t mt-1 pt-1">
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-destructive/10 text-destructive transition-colors text-left"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </header>
   );
 }
