@@ -25,6 +25,10 @@ export const metadata: Metadata = {
   description:
     "Calcule ICMS, PIS, COFINS e FUNRURAL para produtos rurais interestaduais. Simule o custo real de contratação CLT para sua empresa rural.",
   keywords: ["ICMS rural", "PIS COFINS agronegócio", "FUNRURAL", "custo CLT", "calculadora fiscal rural"],
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
   openGraph: {
     title: "Tributo Rural — Calculadora de Impostos Rurais",
     description: "Ferramenta fiscal para o agronegócio brasileiro",

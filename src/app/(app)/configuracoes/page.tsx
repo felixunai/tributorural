@@ -1,53 +1,76 @@
-export const dynamic = "force-dynamic";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StripePortalButton } from "@/components/shared/StripePortalButton";
-import { formatDate } from "@/lib/utils";
-import { CreditCard, User } from "lucide-react";
-import type { Metadata } from "next";
+import { CreditCard, User, Loader2 } from "lucide-react";
 
-export const metadata: Metadata = { title: "Configurações" };
+interface MeData {
+  name: string | null;
+  email: string | null;
+  planTier: string;
+  subscription: {
+    status: string;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+  } | null;
+}
 
-export default async function ConfiguracoesPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+const planLabels: Record<string, string> = {
+  FREE: "Gratuito",
+  PRO: "Profissional",
+  ENTERPRISE: "Profissional",
+};
 
-  const userId = session.user.id;
+const subStatusLabel: Record<string, string> = {
+  ACTIVE: "Ativa",
+  TRIALING: "Em período de teste",
+  PAST_DUE: "Pagamento pendente",
+  CANCELED: "Cancelada",
+  UNPAID: "Pagamento em atraso",
+  INCOMPLETE: "Incompleta",
+};
 
-  let user = null;
-  try {
-    user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        subscription: true,
-      },
-    });
-  } catch (err) {
-    console.error("[configuracoes] Prisma error:", err);
-    throw err;
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("pt-BR");
+}
+
+export default function ConfiguracoesPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [me, setMe] = useState<MeData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+      return;
+    }
+    if (status !== "authenticated") return;
+
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((data) => setMe(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [status, router]);
+
+  if (status === "loading" || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
-  const sub = user?.subscription;
+  if (!session?.user) return null;
 
-  const planLabels: Record<string, string> = {
-    FREE: "Gratuito",
-    PRO: "Profissional",
-    ENTERPRISE: "Profissional",
-  };
-  const planLabel = planLabels[session.user.planTier] ?? session.user.planTier;
-
-  const subStatusLabel: Record<string, string> = {
-    ACTIVE: "Ativa",
-    TRIALING: "Em período de teste",
-    PAST_DUE: "Pagamento pendente",
-    CANCELED: "Cancelada",
-    UNPAID: "Pagamento em atraso",
-    INCOMPLETE: "Incompleta",
-  };
+  const planTier = me?.planTier ?? session.user.planTier;
+  const planLabel = planLabels[planTier] ?? planTier;
+  const sub = me?.subscription;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -68,11 +91,11 @@ export default async function ConfiguracoesPage() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Nome</p>
-              <p className="font-medium">{user?.name ?? "—"}</p>
+              <p className="font-medium">{me?.name ?? session.user.name ?? "—"}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Email</p>
-              <p className="font-medium">{user?.email ?? "—"}</p>
+              <p className="font-medium">{me?.email ?? session.user.email ?? "—"}</p>
             </div>
           </div>
         </CardContent>
@@ -98,13 +121,17 @@ export default async function ConfiguracoesPage() {
                 )}
               </p>
             </div>
-            <Badge variant={session.user.planTier === "FREE" ? "secondary" : "default"}>
-              {session.user.planTier}
-            </Badge>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              planTier === "FREE"
+                ? "bg-secondary text-secondary-foreground"
+                : "bg-primary text-primary-foreground"
+            }`}>
+              {planTier === "FREE" ? "Gratuito" : "PRO"}
+            </span>
           </div>
 
           <div className="border-t pt-4 space-y-3">
-            {session.user.planTier === "FREE" ? (
+            {planTier === "FREE" ? (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
                   Faça upgrade para desbloquear todas as funcionalidades.
