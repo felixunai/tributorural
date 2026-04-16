@@ -133,6 +133,18 @@
   }
 }
 
+/* Commodity ticker marquee */
+@keyframes commodity-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-commodity-marquee {
+  animation: commodity-marquee 45s linear infinite;
+}
+.animate-commodity-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* Hero gradient mesh */
 .hero-mesh {
   background-color: oklch(0.10 0.04 160);

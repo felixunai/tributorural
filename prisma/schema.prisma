@@ -269,3 +269,13 @@ model Calculation {
   @@index([userId, type])
   @@index([userId, createdAt(sort: Desc)])
 }
+
+// ─────────────────────────────────────────
+// COMMODITY PRICE CACHE
+// ─────────────────────────────────────────
+
+model CommodityCache {
+  id        String   @id @default("main")
+  data      Json
+  fetchedAt DateTime
+}

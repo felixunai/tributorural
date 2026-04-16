@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Calculator, Users, TrendingUp, ArrowRight, FileX2 } from "lucide-react";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
 import { RecentCalculationsSection } from "@/components/dashboard/RecentCalculationsSection";
+import { CommodityTicker } from "@/components/dashboard/CommodityTicker";
 import { format } from "date-fns";
 import type { Metadata } from "next";
 
@@ -69,8 +70,13 @@ export default async function DashboardPage() {
     totalCost: calc.totalCost ? Number(calc.totalCost) : null,
   }));
 
+  const isPro = ["PRO", "ENTERPRISE"].includes(session!.user.planTier);
+
   return (
     <div className="space-y-6">
+      {/* Commodity ticker — PRO+ only */}
+      {isPro && <CommodityTicker />}
+
       <div>
         <h1 className="text-2xl font-bold">
           Olá, {session!.user.name?.split(" ")[0] ?? "usuário"} 👋
