@@ -96,7 +96,19 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 );
 CurrencyInput.displayName = "CurrencyInput";
 
-/** Parse any BRL-formatted string to float. Handles "1.234,56", "1234,56", "1234.56" */
+/**
+ * Parse any BRL-formatted string to float.
+ * - "1.234,56"  → 1234.56  (pt-BR with thousand sep)
+ * - "1234,56"   → 1234.56  (pt-BR without thousand sep)
+ * - "1234.56"   → 1234.56  (already decimal — stored internally by CurrencyInput)
+ * - "1234"      → 1234
+ */
 export function parseBRL(value: string): number {
-  return parseFloat(value.replace(/\./g, "").replace(",", ".")) || 0;
+  if (!value) return 0;
+  // If the value contains a comma it's pt-BR format: remove dots (thousands) then swap comma→dot
+  if (value.includes(",")) {
+    return parseFloat(value.replace(/\./g, "").replace(",", ".")) || 0;
+  }
+  // Otherwise it's already in English decimal format ("50000.00") — parse directly
+  return parseFloat(value) || 0;
 }
