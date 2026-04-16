@@ -19,6 +19,7 @@ import {
   Calculator,
   Crown,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import type { PlanTier, SubscriptionStatus } from "@/types/prisma";
 
@@ -70,6 +71,7 @@ export function UsersTable() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [resettingQuotaId, setResettingQuotaId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -143,6 +145,20 @@ export function UsersTable() {
       }
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function handleResetQuota(userId: string) {
+    setResettingQuotaId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/reset-quota`, { method: "POST" });
+      if (res.ok) {
+        toast.success("Cota de cálculos zerada para este mês");
+      } else {
+        toast.error("Erro ao zerar cota");
+      }
+    } finally {
+      setResettingQuotaId(null);
     }
   }
 
@@ -319,6 +335,22 @@ export function UsersTable() {
                           </>
                         ) : (
                           <>
+                            {/* Reset quota — only for FREE users */}
+                            {tier === "FREE" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleResetQuota(user.id)}
+                                disabled={resettingQuotaId === user.id}
+                                title="Zerar cota de cálculos deste mês"
+                              >
+                                {resettingQuotaId === user.id
+                                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                                  : <RotateCcw className="h-4 w-4" />
+                                }
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
