@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -11,6 +12,8 @@ import {
   CreditCard,
   Sprout,
   ChevronLeft,
+  X,
+  LogOut,
 } from "lucide-react";
 
 const adminNavItems = [
@@ -21,31 +24,26 @@ const adminNavItems = [
   { href: "/admin/planos", label: "Planos", icon: CreditCard },
 ];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
 
-  return (
-    <aside className="w-64 min-h-screen border-r bg-card flex flex-col">
-      <div className="h-16 flex items-center px-6 border-b gap-3">
-        <Sprout className="h-6 w-6 text-primary" />
-        <div>
-          <p className="font-bold text-sm leading-tight">Tributo Rural</p>
-          <p className="text-xs text-muted-foreground">Painel Admin</p>
-        </div>
-      </div>
-
-      <nav className="flex-1 py-4 px-3 space-y-1">
+  const navContent = (
+    <>
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
         {adminNavItems.map((item) => {
-          const isActive = item.exact
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
-
+          const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -58,15 +56,68 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t">
+      <div className="p-3 border-t space-y-1 shrink-0">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4 shrink-0" />
           Voltar ao sistema
         </Link>
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Sair
+        </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex flex-col w-64 min-h-screen border-r bg-card">
+        <div className="h-16 flex items-center px-5 border-b gap-3 shrink-0">
+          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+            <Sprout className="h-4 w-4 text-primary-foreground" />
+          </div>
+          <div>
+            <p className="font-bold text-sm leading-tight">Tributo Rural</p>
+            <p className="text-xs text-muted-foreground">Painel Admin</p>
+          </div>
+        </div>
+        {navContent}
+      </aside>
+
+      {/* Mobile sidebar */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex flex-col bg-card border-r w-72 transition-transform duration-300 lg:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="h-16 flex items-center justify-between px-4 border-b shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+              <Sprout className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="font-bold text-sm leading-tight">Tributo Rural</p>
+              <p className="text-xs text-muted-foreground">Painel Admin</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {navContent}
+      </aside>
+    </>
   );
 }

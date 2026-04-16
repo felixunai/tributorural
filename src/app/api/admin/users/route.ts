@@ -10,18 +10,36 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") ?? "1");
-  const limit = parseInt(searchParams.get("limit") ?? "25");
+  const limit = parseInt(searchParams.get("limit") ?? "20");
+  const search = searchParams.get("search") ?? "";
+  const planFilter = searchParams.get("plan") ?? "ALL";
   const skip = (page - 1) * limit;
+
+  const where = {
+    role: "USER" as const,
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" as const } },
+            { email: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+    ...(planFilter !== "ALL"
+      ? { subscription: { plan: { tier: planFilter as "FREE" | "PRO" | "ENTERPRISE" } } }
+      : {}),
+  };
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
-      where: { role: "USER" },
+      where,
       select: {
         id: true,
         name: true,
         email: true,
         isBlocked: true,
         createdAt: true,
+        _count: { select: { calculations: true } },
         subscription: {
           select: {
             status: true,
@@ -34,8 +52,13 @@ export async function GET(req: Request) {
       skip,
       take: limit,
     }),
-    prisma.user.count({ where: { role: "USER" } }),
+    prisma.user.count({ where }),
   ]);
 
-  return NextResponse.json({ users, total, page, totalPages: Math.ceil(total / limit) });
+  return NextResponse.json({
+    users,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  });
 }
