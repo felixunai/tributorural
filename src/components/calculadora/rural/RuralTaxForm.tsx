@@ -5,8 +5,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CurrencyInput, parseBRL } from "@/components/ui/currency-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StateSelector } from "@/components/shared/StateSelector";
@@ -72,7 +72,7 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          saleValue: parseFloat(data.saleValue.replace(",", ".")),
+          saleValue: parseBRL(data.saleValue),
         }),
       });
 
@@ -177,9 +177,17 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Valor de venda (R$)</Label>
-              <Input
-                placeholder="Ex: 100.000,00"
-                {...register("saleValue")}
+              <Controller
+                name="saleValue"
+                control={control}
+                render={({ field }) => (
+                  <CurrencyInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="100.000,00"
+                  />
+                )}
               />
               {errors.saleValue && <p className="text-xs text-destructive">{errors.saleValue.message}</p>}
             </div>

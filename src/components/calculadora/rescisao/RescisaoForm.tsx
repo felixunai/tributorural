@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CurrencyInput, parseBRL } from "@/components/ui/currency-input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, FileX2 } from "lucide-react";
@@ -60,15 +61,13 @@ export function RescisaoForm({ onResult }: RescisaoFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          grossSalary: parseFloat(data.grossSalary.replace(/\./g, "").replace(",", ".")),
+          grossSalary: parseBRL(data.grossSalary),
           admissionDate: data.admissionDate,
           terminationDate: data.terminationDate,
           tipoRescisao: data.tipoRescisao,
           avisoPrevioTrabalhado: data.avisoPrevioTrabalhado === "true",
           feriasVencidasPeriodos: parseInt(data.feriasVencidasPeriodos),
-          fgtsBalance: data.fgtsBalance
-            ? parseFloat(data.fgtsBalance.replace(/\./g, "").replace(",", "."))
-            : undefined,
+          fgtsBalance: data.fgtsBalance ? parseBRL(data.fgtsBalance) : undefined,
         }),
       });
       if (!res.ok) return;
@@ -100,7 +99,18 @@ export function RescisaoForm({ onResult }: RescisaoFormProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Salário bruto mensal (R$)</Label>
-              <Input placeholder="Ex: 3.500,00" {...register("grossSalary")} />
+              <Controller
+                name="grossSalary"
+                control={control}
+                render={({ field }) => (
+                  <CurrencyInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="3.500,00"
+                  />
+                )}
+              />
               {errors.grossSalary && <p className="text-xs text-destructive">{errors.grossSalary.message}</p>}
             </div>
 
@@ -190,9 +200,17 @@ export function RescisaoForm({ onResult }: RescisaoFormProps) {
             {showFgtsField && (
               <div className="space-y-1.5">
                 <Label>Saldo do FGTS (R$) <span className="text-muted-foreground text-xs">(opcional)</span></Label>
-                <Input
-                  placeholder="Deixe em branco para estimar"
-                  {...register("fgtsBalance")}
+                <Controller
+                  name="fgtsBalance"
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Deixe em branco para estimar"
+                    />
+                  )}
                 />
                 <p className="text-xs text-muted-foreground">
                   Se informado, a multa será calculada sobre o saldo real.

@@ -5,8 +5,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CurrencyInput, parseBRL } from "@/components/ui/currency-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Users } from "lucide-react";
@@ -43,7 +43,7 @@ export function RhCltForm({ onResult }: RhCltFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          grossSalary: parseFloat(data.grossSalary.replace(",", ".")),
+          grossSalary: parseBRL(data.grossSalary),
           ratFapRate: parseFloat(data.ratFapRate),
         }),
       });
@@ -72,7 +72,18 @@ export function RhCltForm({ onResult }: RhCltFormProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Salário bruto (R$)</Label>
-              <Input placeholder="Ex: 3.500,00" {...register("grossSalary")} />
+              <Controller
+                name="grossSalary"
+                control={control}
+                render={({ field }) => (
+                  <CurrencyInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="3.500,00"
+                  />
+                )}
+              />
               {errors.grossSalary && (
                 <p className="text-xs text-destructive">{errors.grossSalary.message}</p>
               )}
