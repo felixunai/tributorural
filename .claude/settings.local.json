@@ -6,7 +6,11 @@
       "Bash(npx create-next-app@latest tributorural --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack)",
       "Bash(npm install *)",
       "Bash(npx prisma *)",
-      "Bash(npx shadcn@latest add card input label select dialog badge table tabs separator avatar dropdown-menu form sonner)"
+      "Bash(npx shadcn@latest add card input label select dialog badge table tabs separator avatar dropdown-menu form sonner)",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

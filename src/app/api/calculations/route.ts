@@ -38,20 +38,43 @@ const saveSchema = z.object({
   ratesSnapshot: z.any(),
 });
 
+const MONTHLY_SAVE_LIMIT: Record<string, number | null> = {
+  FREE: 0,
+  PRO: 5,
+  ENTERPRISE: null, // unlimited
+};
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check plan allows history
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId: session.user.id },
-    include: { plan: true },
-  });
+  const plan = session.user.role === "ADMIN" ? "ENTERPRISE" : session.user.planTier;
+  const saveLimit = MONTHLY_SAVE_LIMIT[plan] ?? null;
 
-  if (!subscription?.plan.canAccessHistory && session.user.planTier === "FREE") {
-    // Free users can save but won't be able to view history — still allow saving
+  // FREE: cannot save at all
+  if (saveLimit === 0) {
+    return NextResponse.json(
+      { error: "Plano Gratuito não permite salvar cálculos. Faça upgrade para o plano PRO." },
+      { status: 403 }
+    );
+  }
+
+  // PRO: max 5/month
+  if (saveLimit !== null) {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const used = await prisma.calculation.count({
+      where: { userId: session.user.id, createdAt: { gte: startOfMonth } },
+    });
+    if (used >= saveLimit) {
+      return NextResponse.json(
+        { error: `Limite de ${saveLimit} salvamentos por mês atingido. Faça upgrade para o plano Empresarial.` },
+        { status: 403 }
+      );
+    }
   }
 
   const body = await req.json();
