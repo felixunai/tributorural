@@ -11,72 +11,111 @@ import {
   Settings,
   Sprout,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PlanTier } from "@prisma/client";
 
 const navItems = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    href: "/calculadora-rural",
-    label: "Impostos Rurais",
-    icon: Calculator,
-    badge: null,
-  },
-  {
-    href: "/calculadora-rh",
-    label: "Cálculo CLT",
-    icon: Users,
-    requiredPlan: "PRO" as PlanTier,
-  },
-  {
-    href: "/historico",
-    label: "Histórico",
-    icon: History,
-    requiredPlan: "PRO" as PlanTier,
-  },
-  {
-    href: "/configuracoes",
-    label: "Configurações",
-    icon: Settings,
-  },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/calculadora-rural", label: "Impostos Rurais", icon: Calculator },
+  { href: "/calculadora-rh", label: "Cálculo CLT", icon: Users, requiredPlan: "PRO" as PlanTier },
+  { href: "/historico", label: "Histórico", icon: History, requiredPlan: "PRO" as PlanTier },
+  { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 interface AppSidebarProps {
   planTier: PlanTier;
+  mobileOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function AppSidebar({ planTier }: AppSidebarProps) {
+export function AppSidebar({ planTier, mobileOpen = false, onClose }: AppSidebarProps) {
   const pathname = usePathname();
 
-  return (
-    <aside className="w-64 min-h-screen border-r bg-card flex flex-col">
-      <div className="h-16 flex items-center px-6 border-b">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-primary">
-          <Sprout className="h-6 w-6" />
+  const content = (
+    <aside
+      className={cn(
+        "flex flex-col bg-card border-r",
+        // Desktop: always visible, fixed width
+        "hidden lg:flex lg:w-64 lg:min-h-screen",
+      )}
+    >
+      <SidebarContent planTier={planTier} pathname={pathname} />
+    </aside>
+  );
+
+  const mobileContent = (
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 flex flex-col bg-card border-r w-72 transition-transform duration-300 lg:hidden",
+        mobileOpen ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
+      {/* Close button */}
+      <div className="h-16 flex items-center justify-between px-4 border-b">
+        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-primary" onClick={onClose}>
+          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+            <Sprout className="h-4 w-4 text-primary-foreground" />
+          </div>
           <span>Tributo Rural</span>
+        </Link>
+        <button
+          onClick={onClose}
+          className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground"
+          aria-label="Fechar menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+      <SidebarContent planTier={planTier} pathname={pathname} onNavClick={onClose} />
+    </aside>
+  );
+
+  return (
+    <>
+      {content}
+      {mobileContent}
+    </>
+  );
+}
+
+function SidebarContent({
+  planTier,
+  pathname,
+  onNavClick,
+}: {
+  planTier: PlanTier;
+  pathname: string;
+  onNavClick?: () => void;
+}) {
+  return (
+    <>
+      {/* Logo — desktop only */}
+      <div className="hidden lg:flex h-16 items-center px-5 border-b shrink-0">
+        <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
+          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+            <Sprout className="h-4 w-4 text-primary-foreground" />
+          </div>
+          <span className="text-foreground">Tributo Rural</span>
         </Link>
       </div>
 
-      <nav className="flex-1 py-4 px-3 space-y-1">
+      {/* Nav items */}
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
-          const isLocked =
-            item.requiredPlan &&
-            planTier === "FREE";
+          const isLocked = item.requiredPlan && planTier === "FREE";
 
           return (
             <Link
               key={item.href}
               href={isLocked ? "/pricing" : item.href}
+              onClick={onNavClick}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted",
                 isLocked && "opacity-60"
               )}
@@ -84,20 +123,21 @@ export function AppSidebar({ planTier }: AppSidebarProps) {
               <item.icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{item.label}</span>
               {isLocked && (
-                <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
                   PRO
                 </Badge>
               )}
               {isActive && !isLocked && (
-                <ChevronRight className="h-3 w-3 opacity-50" />
+                <ChevronRight className="h-3 w-3 opacity-40" />
               )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t">
-        <div className="rounded-lg bg-muted px-3 py-2.5">
+      {/* Plan badge */}
+      <div className="p-3 border-t shrink-0">
+        <div className="rounded-xl bg-muted px-3 py-3">
           <p className="text-xs font-medium text-muted-foreground">Plano atual</p>
           <p className="text-sm font-semibold mt-0.5">
             {planTier === "FREE" && "Gratuito"}
@@ -107,6 +147,7 @@ export function AppSidebar({ planTier }: AppSidebarProps) {
           {planTier === "FREE" && (
             <Link
               href="/pricing"
+              onClick={onNavClick}
               className="text-xs text-primary font-medium mt-1 block hover:underline"
             >
               Fazer upgrade →
@@ -114,6 +155,6 @@ export function AppSidebar({ planTier }: AppSidebarProps) {
           )}
         </div>
       </div>
-    </aside>
+    </>
   );
 }

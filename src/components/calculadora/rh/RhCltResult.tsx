@@ -20,30 +20,30 @@ export function RhCltResult({ result, onSave, canSave = true }: RhCltResultProps
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card className="border-indigo-200 bg-indigo-50 dark:bg-indigo-950/20">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Salário bruto</p>
-            <p className="text-2xl font-bold mt-1">{formatBRL(result.grossSalary)}</p>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground">Salário bruto</p>
+            <p className="text-xl sm:text-2xl font-bold mt-0.5">{formatBRL(result.grossSalary)}</p>
           </CardContent>
         </Card>
 
         <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total de encargos</p>
-            <p className="text-2xl font-bold mt-1 text-destructive">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground">Total de encargos</p>
+            <p className="text-xl sm:text-2xl font-bold mt-0.5 text-destructive">
               {formatBRL(result.totalEncargos)}
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Custo total ao empregador</p>
-            <p className="text-2xl font-bold mt-1 text-green-700">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground">Custo total/mês</p>
+            <p className="text-xl sm:text-2xl font-bold mt-0.5 text-green-700">
               {formatBRL(result.totalMonthlyCost)}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-0.5">
               +{formatPercent(result.encargosPercentage)} sobre o salário
             </p>
           </CardContent>
@@ -59,15 +59,15 @@ export function RhCltResult({ result, onSave, canSave = true }: RhCltResultProps
           <CardContent>
             <div className="space-y-3">
               {encargos.map((row) => (
-                <div key={row.label} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: row.color }} />
-                    <span className="text-sm">{row.label}</span>
-                    <Badge variant="outline" className="text-xs">
+                <div key={row.label} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />
+                    <span className="text-sm truncate">{row.label}</span>
+                    <Badge variant="outline" className="text-xs shrink-0 px-1.5 py-0">
                       {formatPercent(row.rate)}
                     </Badge>
                   </div>
-                  <span className="text-sm font-semibold">{formatBRL(row.amount)}</span>
+                  <span className="text-sm font-semibold shrink-0">{formatBRL(row.amount)}</span>
                 </div>
               ))}
 
@@ -94,7 +94,7 @@ export function RhCltResult({ result, onSave, canSave = true }: RhCltResultProps
 
       {canSave && onSave && (
         <div className="flex justify-end">
-          <Button onClick={onSave} variant="outline">
+          <Button onClick={onSave} variant="outline" className="w-full sm:w-auto">
             <Save className="mr-2 h-4 w-4" />
             Salvar este cálculo
           </Button>

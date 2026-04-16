@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { Topbar } from "@/components/layout/Topbar";
+import { AppShell } from "@/components/layout/AppShell";
 
 export default async function AppLayout({
   children,
@@ -14,12 +13,8 @@ export default async function AppLayout({
   if (session.user.isBlocked) redirect("/login?error=blocked");
 
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar planTier={session.user.planTier} />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar />
-        <main className="flex-1 p-6 bg-muted/20">{children}</main>
-      </div>
-    </div>
+    <AppShell planTier={session.user.planTier}>
+      {children}
+    </AppShell>
   );
 }
