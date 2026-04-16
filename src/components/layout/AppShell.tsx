@@ -7,10 +7,11 @@ import type { PlanTier } from "@prisma/client";
 
 interface AppShellProps {
   planTier: PlanTier;
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export function AppShell({ planTier, children }: AppShellProps) {
+export function AppShell({ planTier, isAdmin, children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -26,6 +27,7 @@ export function AppShell({ planTier, children }: AppShellProps) {
       {/* Sidebar */}
       <AppSidebar
         planTier={planTier}
+        isAdmin={isAdmin}
         mobileOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

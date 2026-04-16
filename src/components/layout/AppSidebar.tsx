@@ -14,6 +14,7 @@ import {
   ChevronRight,
   X,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PlanTier } from "@prisma/client";
@@ -28,11 +29,12 @@ const navItems = [
 
 interface AppSidebarProps {
   planTier: PlanTier;
+  isAdmin?: boolean;
   mobileOpen?: boolean;
   onClose?: () => void;
 }
 
-export function AppSidebar({ planTier, mobileOpen = false, onClose }: AppSidebarProps) {
+export function AppSidebar({ planTier, isAdmin, mobileOpen = false, onClose }: AppSidebarProps) {
   const pathname = usePathname();
 
   const content = (
@@ -43,7 +45,7 @@ export function AppSidebar({ planTier, mobileOpen = false, onClose }: AppSidebar
         "hidden lg:flex lg:w-64 lg:min-h-screen",
       )}
     >
-      <SidebarContent planTier={planTier} pathname={pathname} />
+      <SidebarContent planTier={planTier} isAdmin={isAdmin} pathname={pathname} />
     </aside>
   );
 
@@ -70,7 +72,7 @@ export function AppSidebar({ planTier, mobileOpen = false, onClose }: AppSidebar
           <X className="h-5 w-5" />
         </button>
       </div>
-      <SidebarContent planTier={planTier} pathname={pathname} onNavClick={onClose} />
+      <SidebarContent planTier={planTier} isAdmin={isAdmin} pathname={pathname} onNavClick={onClose} />
     </aside>
   );
 
@@ -84,10 +86,12 @@ export function AppSidebar({ planTier, mobileOpen = false, onClose }: AppSidebar
 
 function SidebarContent({
   planTier,
+  isAdmin,
   pathname,
   onNavClick,
 }: {
   planTier: PlanTier;
+  isAdmin?: boolean;
   pathname: string;
   onNavClick?: () => void;
 }) {
@@ -136,6 +140,20 @@ function SidebarContent({
           );
         })}
       </nav>
+
+      {/* Admin link */}
+      {isAdmin && (
+        <div className="px-3 pb-2">
+          <Link
+            href="/admin"
+            onClick={onNavClick}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 transition-all border border-violet-200"
+          >
+            <ShieldCheck className="h-4 w-4 shrink-0" />
+            Painel Admin
+          </Link>
+        </div>
+      )}
 
       {/* Plan badge + logout */}
       <div className="p-3 border-t shrink-0 space-y-2">

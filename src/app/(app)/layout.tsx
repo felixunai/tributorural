@@ -13,7 +13,7 @@ export default async function AppLayout({
   if (session.user.isBlocked) redirect("/login?error=blocked");
 
   return (
-    <AppShell planTier={session.user.planTier}>
+    <AppShell planTier={session.user.planTier} isAdmin={session.user.role === "ADMIN"}>
       {children}
     </AppShell>
   );
