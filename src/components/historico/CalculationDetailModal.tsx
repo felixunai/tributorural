@@ -118,7 +118,7 @@ export function CalculationDetailModal({ id, onClose }: CalculationDetailModalPr
 
   return (
     <Dialog open={!!id} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 flex-wrap">
             {calc ? (

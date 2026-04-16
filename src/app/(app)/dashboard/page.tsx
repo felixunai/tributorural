@@ -5,9 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Calculator, Users, TrendingUp, History, ArrowRight, FileX2 } from "lucide-react";
-import { formatBRL, formatDate } from "@/lib/utils";
+import { Calculator, Users, TrendingUp, ArrowRight, FileX2 } from "lucide-react";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
+import { RecentCalculationsSection } from "@/components/dashboard/RecentCalculationsSection";
 import { format } from "date-fns";
 import type { Metadata } from "next";
 
@@ -241,54 +241,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent calculations */}
-      {serializedCalcs.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Cálculos recentes</CardTitle>
-              <CardDescription>Seus últimos 5 cálculos salvos</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/historico">
-                Ver todos
-                <History className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {serializedCalcs.map((calc) => (
-                <div
-                  key={calc.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {calc.title ?? (calc.type === "RURAL_TAX" ? calc.productName : "Cálculo CLT")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {calc.type === "RURAL_TAX" ? "Impostos Rurais" : "Custo CLT"} •{" "}
-                      {formatDate(calc.createdAt)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-destructive">
-                      {calc.type === "RURAL_TAX" && calc.totalTaxAmount != null
-                        ? formatBRL(calc.totalTaxAmount)
-                        : calc.type === "RH_CLT" && calc.totalCost != null
-                          ? formatBRL(calc.totalCost)
-                          : "—"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {calc.type === "RURAL_TAX" ? "total impostos" : "custo total"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <RecentCalculationsSection items={serializedCalcs} />
     </div>
   );
 }

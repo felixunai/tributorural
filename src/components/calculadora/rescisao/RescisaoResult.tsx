@@ -46,7 +46,7 @@ export function RescisaoResult({ result, onSave, canSave = true }: RescisaoResul
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 min-[480px]:grid-cols-3 gap-3">
         <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Total bruto (empregador paga)</p>
@@ -76,7 +76,7 @@ export function RescisaoResult({ result, onSave, canSave = true }: RescisaoResul
       </div>
 
       {/* Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Earnings */}
         <Card>
           <CardHeader>

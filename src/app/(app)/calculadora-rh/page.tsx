@@ -6,6 +6,7 @@ import { RhCltForm } from "@/components/calculadora/rh/RhCltForm";
 import { RhCltResult } from "@/components/calculadora/rh/RhCltResult";
 import { SaveCalculationModal } from "@/components/shared/SaveCalculationModal";
 import { SubscriptionGate } from "@/components/shared/SubscriptionGate";
+import { formatBRL } from "@/lib/utils";
 import type { RhCltResult as Result } from "@/lib/tax/rhClt";
 
 export default function CalculadoraRhPage() {
@@ -19,7 +20,7 @@ export default function CalculadoraRhPage() {
 
     const payload = {
       type: "RH_CLT",
-      title: title || `CLT — R$ ${result.grossSalary.toFixed(2)}`,
+      title: title || `CLT — ${formatBRL(result.grossSalary)}`,
       grossSalary: result.grossSalary,
       inssPatronal: result.inssPatronal,
       fgts: result.fgts,
@@ -64,7 +65,7 @@ export default function CalculadoraRhPage() {
             <SaveCalculationModal
               open={saveOpen}
               onOpenChange={setSaveOpen}
-              defaultTitle={`CLT — R$ ${result.grossSalary.toFixed(2)}`}
+              defaultTitle={`CLT — ${formatBRL(result.grossSalary)}`}
               onSave={handleSave}
             />
           </>

@@ -6,6 +6,7 @@ import { RescisaoForm } from "@/components/calculadora/rescisao/RescisaoForm";
 import { RescisaoResult } from "@/components/calculadora/rescisao/RescisaoResult";
 import { SaveCalculationModal } from "@/components/shared/SaveCalculationModal";
 import { SubscriptionGate } from "@/components/shared/SubscriptionGate";
+import { formatBRL } from "@/lib/utils";
 import type { RescisaoResult as Result } from "@/lib/tax/rescisao";
 
 export default function CalculadoraRescisaoPage() {
@@ -18,7 +19,7 @@ export default function CalculadoraRescisaoPage() {
     if (!result) return;
     const payload = {
       type: "RESCISAO",
-      title: title || `Rescisão — R$ ${result.totalLiquido.toFixed(2)}`,
+      title: title || `Rescisão — ${formatBRL(result.totalLiquido)}`,
       grossSalary: result.grossSalary,
       totalCost: result.totalBruto,
       admissionDate: snapshot.admissionDate,
@@ -57,7 +58,7 @@ export default function CalculadoraRescisaoPage() {
             <SaveCalculationModal
               open={saveOpen}
               onOpenChange={setSaveOpen}
-              defaultTitle={`Rescisão — R$ ${result.totalLiquido.toFixed(2)}`}
+              defaultTitle={`Rescisão — ${formatBRL(result.totalLiquido)}`}
               onSave={handleSave}
             />
           </>
