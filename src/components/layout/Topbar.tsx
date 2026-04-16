@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ interface TopbarProps {
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const user = session?.user;
 
   const initials = user?.name
@@ -36,7 +37,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Spacer on desktop (no hamburger shown) */}
+      {/* Spacer on desktop */}
       <div className="hidden lg:block" />
 
       {/* User menu */}
@@ -53,6 +54,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
             {user?.name ?? user?.email}
           </span>
         </DropdownMenuTrigger>
+
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-0.5">
@@ -60,22 +62,23 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           </DropdownMenuLabel>
+
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <Link href="/configuracoes" className="flex items-center w-full">
-              <Settings className="mr-2 h-4 w-4" />
-              Configurações
-            </Link>
+
+          <DropdownMenuItem onClick={() => router.push("/configuracoes")}>
+            <Settings className="mr-2 h-4 w-4" />
+            Configurações
           </DropdownMenuItem>
+
           {user?.role === "ADMIN" && (
-            <DropdownMenuItem>
-              <Link href="/admin" className="flex items-center w-full">
-                <Shield className="mr-2 h-4 w-4" />
-                Painel Admin
-              </Link>
+            <DropdownMenuItem onClick={() => router.push("/admin")}>
+              <Shield className="mr-2 h-4 w-4" />
+              Painel Admin
             </DropdownMenuItem>
           )}
+
           <DropdownMenuSeparator />
+
           <DropdownMenuItem
             onClick={() => signOut({ callbackUrl: "/" })}
             className="text-destructive focus:text-destructive"
