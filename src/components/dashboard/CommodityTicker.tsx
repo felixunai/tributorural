@@ -77,16 +77,16 @@ function TickerItem({ item }: { item: CommodityItem }) {
 // ── Teaser shown for FREE plan ──────────────────────────────────────
 export function CommodityTickerLocked() {
   return (
-    <div className="overflow-hidden rounded-xl bg-neutral-900 border border-white/5 shadow-sm">
+    <div className="overflow-hidden rounded-xl bg-neutral-900 border border-neutral-700 shadow-sm">
       <div className="flex items-center h-10">
-        <div className="shrink-0 flex items-center px-3 h-full bg-muted/40 text-muted-foreground text-[11px] font-bold tracking-widest uppercase rounded-l-xl whitespace-nowrap">
+        <div className="shrink-0 flex items-center px-3 h-full bg-neutral-700 text-neutral-300 text-[11px] font-bold tracking-widest uppercase rounded-l-xl whitespace-nowrap">
           Cotações
         </div>
         <div className="flex-1 flex items-center gap-3 px-4 overflow-hidden">
-          <Lock className="h-3.5 w-3.5 text-white/30 shrink-0" />
-          <p className="text-xs text-white/40 truncate">
+          <Lock className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+          <p className="text-xs text-neutral-300 truncate">
             Cotações de commodities em tempo real disponíveis a partir do{" "}
-            <Link href="/pricing" className="text-primary/80 hover:text-primary underline underline-offset-2 transition-colors">
+            <Link href="/pricing" className="text-primary hover:text-primary/80 font-semibold underline underline-offset-2 transition-colors">
               Plano PRO
             </Link>
             {" "}— Boi Gordo · Milho · Café · Soja · Açúcar · e mais
@@ -95,7 +95,7 @@ export function CommodityTickerLocked() {
         <div className="shrink-0 px-3">
           <Link
             href="/pricing"
-            className="text-[11px] font-semibold bg-primary/90 hover:bg-primary text-primary-foreground px-3 py-1 rounded-md transition-colors whitespace-nowrap"
+            className="text-[11px] font-semibold bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1.5 rounded-md transition-colors whitespace-nowrap"
           >
             Upgrade
           </Link>
