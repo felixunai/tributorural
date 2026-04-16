@@ -73,7 +73,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.role = (user as any).role;
         token.isBlocked = (user as any).isBlocked;
-        token.planTier = (user as any).planTier ?? "FREE";
+        // ADMINs always get ENTERPRISE-level access regardless of subscription
+        token.planTier = (user as any).role === "ADMIN" ? "ENTERPRISE" : ((user as any).planTier ?? "FREE");
         token.subStatus = (user as any).subStatus ?? null;
       }
 

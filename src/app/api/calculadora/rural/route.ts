@@ -25,8 +25,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.issues }, { status: 400 });
   }
 
-  // Enforce FREE plan monthly calculation limit
-  if (session.user.planTier === "FREE") {
+  // Enforce FREE plan monthly calculation limit (skip for admins)
+  if (session.user.planTier === "FREE" && session.user.role !== "ADMIN") {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.planTier === "FREE") {
+  if (session.user.planTier === "FREE" && session.user.role !== "ADMIN") {
     return NextResponse.json(
       { error: "Calculadora CLT requer plano PRO ou superior" },
       { status: 403 }

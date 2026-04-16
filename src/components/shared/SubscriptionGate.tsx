@@ -22,8 +22,9 @@ interface SubscriptionGateProps {
 export function SubscriptionGate({ requiredPlan, children, featureName }: SubscriptionGateProps) {
   const { data: session } = useSession();
   const userPlan = session?.user.planTier ?? "FREE";
+  const isAdmin = session?.user.role === "ADMIN";
 
-  if (PLAN_ORDER[userPlan] >= PLAN_ORDER[requiredPlan]) {
+  if (isAdmin || PLAN_ORDER[userPlan] >= PLAN_ORDER[requiredPlan]) {
     return <>{children}</>;
   }
 
