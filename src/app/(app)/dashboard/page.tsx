@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Calculator, Users, TrendingUp, History, ArrowRight } from "lucide-react";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
+import { format } from "date-fns";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -15,7 +16,10 @@ export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user.id;
 
-  const [totalCalcs, recentCalcs, calcsByType, calcsByDay] = await Promise.all([
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [totalCalcs, recentCalcs, calcsByType, last30Calcs] = await Promise.all([
     prisma.calculation.count({ where: { userId } }),
     prisma.calculation.findMany({
       where: { userId },
@@ -28,19 +32,23 @@ export default async function DashboardPage() {
       where: { userId },
       _count: true,
     }),
-    // Last 30 days activity
-    prisma.$queryRaw<{ date: string; count: bigint }[]>`
-      SELECT DATE(created_at)::text as date, COUNT(*)::bigint as count
-      FROM calculations
-      WHERE user_id = ${userId}
-        AND created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `,
+    prisma.calculation.findMany({
+      where: { userId, createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
 
-  const ruralCount = calcsByType.find((c: { type: string; _count: number }) => c.type === "RURAL_TAX")?._count ?? 0;
-  const rhCount = calcsByType.find((c: { type: string; _count: number }) => c.type === "RH_CLT")?._count ?? 0;
+  // Group last 30 days by date in JS (avoids $queryRaw BigInt serialization issue)
+  const dayMap: Record<string, number> = {};
+  for (const calc of last30Calcs) {
+    const key = format(calc.createdAt, "yyyy-MM-dd");
+    dayMap[key] = (dayMap[key] ?? 0) + 1;
+  }
+  const calcsByDay = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
+
+  const ruralCount = calcsByType.find((c) => c.type === "RURAL_TAX")?._count ?? 0;
+  const rhCount = calcsByType.find((c) => c.type === "RH_CLT")?._count ?? 0;
 
   const planLabels: Record<string, string> = {
     FREE: "Gratuito",
@@ -48,6 +56,17 @@ export default async function DashboardPage() {
     ENTERPRISE: "Empresarial",
   };
   const planLabel = planLabels[session!.user.planTier];
+
+  // Serialize Prisma Decimal/Date types to plain values before rendering
+  const serializedCalcs = recentCalcs.map((calc) => ({
+    id: calc.id,
+    title: calc.title ?? null,
+    type: calc.type,
+    createdAt: calc.createdAt.toISOString(),
+    productName: calc.product?.name ?? null,
+    totalTaxAmount: calc.totalTaxAmount ? Number(calc.totalTaxAmount) : null,
+    totalCost: calc.totalCost ? Number(calc.totalCost) : null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -129,10 +148,7 @@ export default async function DashboardPage() {
 
       {/* Charts */}
       <DashboardCharts
-        calcsByDay={calcsByDay.map((r: { date: string; count: bigint }) => ({
-          date: r.date,
-          count: Number(r.count),
-        }))}
+        calcsByDay={calcsByDay}
         calcsByType={{ ruralCount, rhCount }}
       />
 
@@ -189,7 +205,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent calculations */}
-      {recentCalcs.length > 0 && (
+      {serializedCalcs.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -205,14 +221,14 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentCalcs.map((calc) => (
+              {serializedCalcs.map((calc) => (
                 <div
                   key={calc.id}
                   className="flex items-center justify-between py-2 border-b last:border-0"
                 >
                   <div>
                     <p className="text-sm font-medium">
-                      {calc.title ?? (calc.type === "RURAL_TAX" ? calc.product?.name : "Cálculo CLT")}
+                      {calc.title ?? (calc.type === "RURAL_TAX" ? calc.productName : "Cálculo CLT")}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {calc.type === "RURAL_TAX" ? "Impostos Rurais" : "Custo CLT"} •{" "}
@@ -221,10 +237,10 @@ export default async function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-destructive">
-                      {calc.type === "RURAL_TAX" && calc.totalTaxAmount
-                        ? formatBRL(Number(calc.totalTaxAmount))
-                        : calc.type === "RH_CLT" && calc.totalCost
-                          ? formatBRL(Number(calc.totalCost))
+                      {calc.type === "RURAL_TAX" && calc.totalTaxAmount != null
+                        ? formatBRL(calc.totalTaxAmount)
+                        : calc.type === "RH_CLT" && calc.totalCost != null
+                          ? formatBRL(calc.totalCost)
                           : "—"}
                     </p>
                     <p className="text-xs text-muted-foreground">
