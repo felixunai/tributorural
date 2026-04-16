@@ -10,29 +10,62 @@ interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
 
 /**
  * Brazilian BRL currency input.
- * Emits raw decimal string (e.g. "3500.00") via onChange.
- * Displays formatted BRL while not focused (e.g. "3.500,00").
+ * - While focused: user types freely (digits + comma/period accepted)
+ * - On blur: normalizes and formats to pt-BR (e.g. "3.500,00")
+ * - Emits raw decimal string via onChange (e.g. "3500.00")
  */
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
   ({ value = "", onChange, className, onBlur, onFocus, placeholder, ...props }, ref) => {
     const [focused, setFocused] = useState(false);
+    // Text shown while the user is actively typing
+    const [editText, setEditText] = useState("");
 
-    /** "1234.50"  →  "1.234,50" */
-    const formatDisplay = useCallback((raw: string): string => {
+    /** "3500.00" → "3.500,00" */
+    const formatBRL = useCallback((raw: string): string => {
       if (!raw) return "";
       const num = parseFloat(raw);
       if (isNaN(num)) return raw;
       return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }, []);
 
-    /** "1.234,50" or "1234,50" or "1234.50"  →  "1234.50" */
-    const toRaw = useCallback((display: string): string => {
-      // Remove thousand separators (.) only when followed by digits grouped in 3
-      // Strategy: remove all dots that are thousands separators, convert comma to dot
+    /** "3.500,00" or "3500,00" or "3500.00" → "3500.00" */
+    const parseToRaw = useCallback((display: string): string => {
       return display.replace(/\./g, "").replace(",", ".");
     }, []);
 
-    const displayValue = focused ? formatDisplay(value) : formatDisplay(value);
+    function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
+      setFocused(true);
+      // Show formatted-for-editing value (pt-BR style) so user sees what they had
+      setEditText(formatBRL(value));
+      onFocus?.(e);
+      setTimeout(() => {
+        e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+      }, 0);
+    }
+
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+      const raw = e.target.value;
+      setEditText(raw);
+      // Emit parsed value to form
+      const parsed = parseToRaw(raw);
+      onChange?.(parsed);
+    }
+
+    function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
+      setFocused(false);
+      const raw = parseToRaw(editText);
+      const num = parseFloat(raw);
+      if (!isNaN(num) && num > 0) {
+        // Normalize: emit and display as "3500.00"
+        onChange?.(num.toFixed(2));
+      } else {
+        onChange?.("");
+      }
+      onBlur?.(e);
+    }
+
+    // While focused: show what user is typing; while blurred: show formatted value
+    const displayValue = focused ? editText : formatBRL(value);
 
     return (
       <div className="relative">
@@ -45,28 +78,9 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
           inputMode="decimal"
           value={displayValue}
           placeholder={placeholder ?? "0,00"}
-          onChange={(e) => {
-            const raw = toRaw(e.target.value);
-            onChange?.(raw);
-          }}
-          onFocus={(e) => {
-            setFocused(true);
-            onFocus?.(e);
-            // Move cursor to end
-            setTimeout(() => {
-              e.target.setSelectionRange(e.target.value.length, e.target.value.length);
-            }, 0);
-          }}
-          onBlur={(e) => {
-            setFocused(false);
-            // Normalize on blur: "3500" → "3500.00"
-            const raw = toRaw(e.target.value);
-            const num = parseFloat(raw);
-            if (!isNaN(num)) {
-              onChange?.(num.toFixed(2));
-            }
-            onBlur?.(e);
-          }}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           className={cn(
             "flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2",
             "text-sm ring-offset-background placeholder:text-muted-foreground",
