@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -16,16 +15,18 @@ const plans = [
     tier: "FREE",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    description: "Para começar a explorar o sistema",
+    description: "Para conhecer o sistema",
     features: [
-      "Calculadora de Impostos Rurais (5 cálculos/mês)",
-      "30 produtos rurais com NCM",
-      "702 alíquotas ICMS interestaduais",
+      "Calculadora de Impostos Rurais",
+      "5 cálculos por mês",
+      "30 produtos com NCM",
+      "702 alíquotas ICMS",
     ],
     excluded: [
       "Calculadora de Custo CLT",
       "Histórico de cálculos",
       "Exportar CSV/PDF",
+      "Suporte prioritário",
     ],
     cta: "Começar grátis",
     highlighted: false,
@@ -39,7 +40,7 @@ const plans = [
     yearlyPrice: 479,
     description: "Para produtores e consultores rurais",
     features: [
-      "Calculadora de Impostos Rurais ilimitada",
+      "Calculadora Rural ilimitada",
       "Calculadora de Custo CLT",
       "Histórico de 90 dias",
       "Exportar CSV",
@@ -59,9 +60,10 @@ const plans = [
     description: "Para empresas e escritórios contábeis",
     features: [
       "Tudo do plano Profissional",
-      "Histórico completo (sem limite)",
+      "Histórico completo ilimitado",
       "Exportar PDF e CSV",
       "Suporte prioritário",
+      "Multi-usuário (em breve)",
     ],
     excluded: [],
     cta: "Assinar Empresarial",
@@ -81,128 +83,168 @@ export function PricingSection() {
       router.push("/register");
       return;
     }
-
     if (!session) {
       router.push("/register");
       return;
     }
-
     const priceId = yearly ? plan.stripePriceYearly : plan.stripePriceMonthly;
     if (!priceId) {
-      toast.error("Plano não disponível no momento. Configure os IDs do Stripe.");
+      toast.error("Plano não disponível. Configure os IDs do Stripe.");
       return;
     }
-
     const res = await fetch("/api/stripe/create-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ priceId, planTier: plan.tier }),
     });
-
     const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      toast.error("Erro ao iniciar checkout");
-    }
+    if (data.url) window.location.href = data.url;
+    else toast.error("Erro ao iniciar checkout");
   }
 
   return (
-    <div className="container mx-auto px-4">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Planos e Preços
-        </h2>
-        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Escolha o plano ideal para o seu negócio rural. Cancele a qualquer momento.
-        </p>
-
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <span className={cn("text-sm", !yearly && "font-semibold")}>Mensal</span>
-          <button
-            onClick={() => setYearly(!yearly)}
-            className={cn(
-              "relative w-12 h-6 rounded-full transition-colors",
-              yearly ? "bg-primary" : "bg-muted-foreground/30"
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-1 h-4 w-4 rounded-full bg-white transition-transform",
-                yearly ? "translate-x-7" : "translate-x-1"
-              )}
-            />
-          </button>
-          <span className={cn("text-sm", yearly && "font-semibold")}>
-            Anual{" "}
-            <Badge variant="secondary" className="ml-1 text-xs">
-              ~20% off
-            </Badge>
+    <section id="precos" className="py-24 bg-muted/40">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12 max-w-2xl mx-auto">
+          <span className="inline-block text-xs font-bold uppercase tracking-widest text-primary mb-3">
+            Planos e Preços
           </span>
-        </div>
-      </div>
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
+            Escolha o plano ideal{" "}
+            <span className="gradient-text">para seu negócio</span>
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Cancele a qualquer momento. Sem fidelidade.
+          </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        {plans.map((plan) => (
-          <Card
-            key={plan.tier}
-            className={cn(
-              "relative flex flex-col",
-              plan.highlighted && "border-primary shadow-lg shadow-primary/10 scale-105"
-            )}
-          >
-            {plan.highlighted && (
-              <div className="absolute -top-3.5 left-0 right-0 flex justify-center">
-                <Badge className="px-3">Mais popular</Badge>
-              </div>
-            )}
-            <CardHeader>
-              <CardTitle>{plan.name}</CardTitle>
-              <CardDescription>{plan.description}</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">
-                  {plan.monthlyPrice === 0
-                    ? "Grátis"
-                    : `R$ ${(yearly ? plan.yearlyPrice / 12 : plan.monthlyPrice).toFixed(2).replace(".", ",")}`}
-                </span>
-                {plan.monthlyPrice > 0 && (
-                  <span className="text-muted-foreground text-sm ml-1">/mês</span>
+          {/* Toggle */}
+          <div className="mt-7 inline-flex items-center gap-3 rounded-2xl border bg-background px-4 py-2">
+            <span className={cn("text-sm font-medium transition-colors", !yearly ? "text-foreground" : "text-muted-foreground")}>
+              Mensal
+            </span>
+            <button
+              onClick={() => setYearly(!yearly)}
+              className={cn(
+                "relative w-11 h-6 rounded-full transition-colors duration-300",
+                yearly ? "bg-primary" : "bg-border"
+              )}
+              aria-label="Alternar período"
+            >
+              <span
+                className={cn(
+                  "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all duration-300",
+                  yearly ? "left-6" : "left-1"
                 )}
+              />
+            </button>
+            <span className={cn("text-sm font-medium transition-colors flex items-center gap-1.5", yearly ? "text-foreground" : "text-muted-foreground")}>
+              Anual
+              <Badge className="text-[10px] px-1.5 py-0 bg-[oklch(0.84_0.21_128)] text-[oklch(0.18_0.07_130)] border-0">
+                -20%
+              </Badge>
+            </span>
+          </div>
+        </div>
+
+        {/* Pricing cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+          {plans.map((plan) => (
+            <div
+              key={plan.tier}
+              className={cn(
+                "relative rounded-2xl flex flex-col",
+                plan.highlighted
+                  ? "pricing-popular text-white -mt-4 pt-4"
+                  : "border bg-card"
+              )}
+            >
+              {plan.highlighted && (
+                <div className="absolute -top-3.5 left-0 right-0 flex justify-center z-10">
+                  <span className="bg-[oklch(0.84_0.21_128)] text-[oklch(0.18_0.07_130)] text-xs font-extrabold px-4 py-1 rounded-full uppercase tracking-wide shadow-lg">
+                    Mais popular
+                  </span>
+                </div>
+              )}
+
+              <div className="p-7">
+                <p className={cn("text-sm font-semibold", plan.highlighted ? "text-white/70" : "text-muted-foreground")}>
+                  {plan.name}
+                </p>
+                <p className={cn("text-xs mt-0.5", plan.highlighted ? "text-white/50" : "text-muted-foreground/70")}>
+                  {plan.description}
+                </p>
+
+                <div className="mt-5 flex items-end gap-1">
+                  <span className={cn("font-heading text-5xl font-extrabold tracking-tight", plan.highlighted ? "text-white" : "text-foreground")}>
+                    {plan.monthlyPrice === 0
+                      ? "Grátis"
+                      : `R$\u00a0${(yearly ? plan.yearlyPrice / 12 : plan.monthlyPrice)
+                          .toFixed(2)
+                          .replace(".", ",")}`}
+                  </span>
+                  {plan.monthlyPrice > 0 && (
+                    <span className={cn("text-sm mb-2", plan.highlighted ? "text-white/60" : "text-muted-foreground")}>
+                      /mês
+                    </span>
+                  )}
+                </div>
                 {yearly && plan.yearlyPrice > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className={cn("text-xs mt-1", plan.highlighted ? "text-white/50" : "text-muted-foreground")}>
                     R$ {plan.yearlyPrice.toFixed(2).replace(".", ",")} cobrado anualmente
                   </p>
                 )}
+
+                <Button
+                  className={cn(
+                    "w-full mt-6 rounded-xl font-semibold py-2.5",
+                    plan.highlighted
+                      ? "btn-lime border-0"
+                      : plan.tier === "FREE"
+                      ? "bg-secondary text-secondary-foreground hover:bg-secondary/80 border-0"
+                      : "border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-primary-foreground"
+                  )}
+                  onClick={() => handleSubscribe(plan)}
+                >
+                  {plan.cta}
+                </Button>
               </div>
-            </CardHeader>
 
-            <CardContent className="flex-1 flex flex-col justify-between gap-6">
-              <ul className="space-y-3">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
-                {plan.excluded.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground line-through">
-                    <Check className="h-4 w-4 shrink-0 mt-0.5 opacity-30" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
+              <div className={cn("px-7 pb-7 flex-1", plan.highlighted && "border-t border-white/10 pt-5")}>
+                <p className={cn("text-xs font-semibold uppercase tracking-widest mb-3", plan.highlighted ? "text-white/50" : "text-muted-foreground")}>
+                  Incluído
+                </p>
+                <ul className="space-y-2.5">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-sm">
+                      <Check
+                        className={cn("h-4 w-4 shrink-0 mt-0.5", plan.highlighted ? "text-[oklch(0.84_0.21_128)]" : "text-primary")}
+                      />
+                      <span className={plan.highlighted ? "text-white/80" : "text-foreground"}>{f}</span>
+                    </li>
+                  ))}
+                  {plan.excluded.map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-sm">
+                      <X
+                        className={cn("h-4 w-4 shrink-0 mt-0.5", plan.highlighted ? "text-white/20" : "text-muted-foreground/40")}
+                      />
+                      <span className={plan.highlighted ? "text-white/30 line-through" : "text-muted-foreground/50 line-through"}>
+                        {f}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
 
-              <Button
-                className="w-full"
-                variant={plan.highlighted ? "default" : "outline"}
-                onClick={() => handleSubscribe(plan)}
-              >
-                {plan.cta}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {/* Footer note */}
+        <p className="text-center text-sm text-muted-foreground mt-10">
+          Todos os planos incluem acesso ao sistema via web. Pagamentos processados com segurança pelo{" "}
+          <span className="font-semibold text-foreground">Stripe</span>.
+        </p>
       </div>
-    </div>
+    </section>
   );
 }
