@@ -6,7 +6,7 @@ import type { BrazilianState } from "@/types/prisma";
 
 // POST — save a calculation
 const saveSchema = z.object({
-  type: z.enum(["RURAL_TAX", "RH_CLT"]),
+  type: z.enum(["RURAL_TAX", "RH_CLT", "RESCISAO"]),
   title: z.string().optional(),
   // Rural fields
   productId: z.string().optional(),
@@ -29,6 +29,10 @@ const saveSchema = z.object({
   sistemaS: z.number().optional(),
   totalCost: z.number().optional(),
   ratFapPercent: z.number().optional(),
+  // Rescisão fields
+  admissionDate: z.string().optional(),
+  terminationDate: z.string().optional(),
+  tipoRescisao: z.string().optional(),
   // Snapshot
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ratesSnapshot: z.any(),
@@ -58,7 +62,8 @@ export async function POST(req: Request) {
 
   const data = parsed.data;
 
-  const calculation = await prisma.calculation.create({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const calculation = await (prisma.calculation.create as any)({
     data: {
       userId: session.user.id,
       type: data.type,
@@ -82,6 +87,9 @@ export async function POST(req: Request) {
       sistemaS: data.sistemaS,
       totalCost: data.totalCost,
       ratFapPercent: data.ratFapPercent,
+      admissionDate: data.admissionDate ? new Date(data.admissionDate) : undefined,
+      terminationDate: data.terminationDate ? new Date(data.terminationDate) : undefined,
+      tipoRescisao: data.tipoRescisao,
       ratesSnapshot: data.ratesSnapshot,
     },
   });
@@ -104,7 +112,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") ?? "1");
   const limit = parseInt(searchParams.get("limit") ?? "20");
-  const type = searchParams.get("type") as "RURAL_TAX" | "RH_CLT" | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const type = searchParams.get("type") as any;
   const skip = (page - 1) * limit;
 
   // Apply history retention filter

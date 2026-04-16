@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatPercent } from "@/lib/utils";
-import { Save } from "lucide-react";
+import { Save, TrendingDown, Wallet } from "lucide-react";
 import type { RhCltResult as Result } from "@/lib/tax/rhClt";
 import { RhCltBarChart } from "./RhCltBarChart";
 
@@ -19,7 +19,7 @@ export function RhCltResult({ result, onSave, canSave = true }: RhCltResultProps
 
   return (
     <div className="space-y-4">
-      {/* Summary */}
+      {/* Summary — employer view */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card className="border-indigo-200 bg-indigo-50 dark:bg-indigo-950/20">
           <CardContent className="pt-4 pb-4">
@@ -49,6 +49,43 @@ export function RhCltResult({ result, onSave, canSave = true }: RhCltResultProps
           </CardContent>
         </Card>
       </div>
+
+      {/* Employee net salary card */}
+      <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/10">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold flex items-center gap-1.5">
+                <Wallet className="h-4 w-4 text-blue-600" />
+                Salário líquido do funcionário
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                O que o colaborador recebe no bolso após descontos obrigatórios
+              </p>
+            </div>
+            <div className="flex items-center gap-6 sm:gap-8">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">INSS empregado</p>
+                <p className="text-sm font-semibold text-destructive flex items-center gap-1">
+                  <TrendingDown className="h-3 w-3" />
+                  {formatBRL(result.inssEmpregado)}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">IRRF</p>
+                <p className="text-sm font-semibold text-destructive flex items-center gap-1">
+                  <TrendingDown className="h-3 w-3" />
+                  {formatBRL(result.irrfEmpregado)}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Líquido</p>
+                <p className="text-lg font-bold text-blue-700">{formatBRL(result.salarioLiquido)}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Breakdown table */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,7 +19,6 @@ interface TopbarProps {
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
   const { data: session } = useSession();
-  const router = useRouter();
   const user = session?.user;
 
   const initials = user?.name
@@ -62,14 +61,18 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => router.push("/configuracoes")}>
-            <Settings className="mr-2 h-4 w-4" />
-            Configurações
+          <DropdownMenuItem>
+            <Link href="/configuracoes" className="flex items-center w-full">
+              <Settings className="mr-2 h-4 w-4" />
+              Configurações
+            </Link>
           </DropdownMenuItem>
           {user?.role === "ADMIN" && (
-            <DropdownMenuItem onClick={() => router.push("/admin")}>
-              <Shield className="mr-2 h-4 w-4" />
-              Painel Admin
+            <DropdownMenuItem>
+              <Link href="/admin" className="flex items-center w-full">
+                <Shield className="mr-2 h-4 w-4" />
+                Painel Admin
+              </Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />

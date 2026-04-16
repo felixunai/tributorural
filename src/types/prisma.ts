@@ -13,7 +13,7 @@ export type SubscriptionStatus =
 
 export type PlanTier = "FREE" | "PRO" | "ENTERPRISE";
 
-export type CalculationType = "RURAL_TAX" | "RH_CLT";
+export type CalculationType = "RURAL_TAX" | "RH_CLT" | "RESCISAO";
 
 export type BrazilianState =
   | "AC" | "AL" | "AP" | "AM" | "BA" | "CE" | "DF" | "ES" | "GO" | "MA"

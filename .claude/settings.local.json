@@ -5,7 +5,8 @@
       "Bash(mv tributorural/CLAUDE.md /tmp/CLAUDE_backup.md)",
       "Bash(npx create-next-app@latest tributorural --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack)",
       "Bash(npm install *)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(npx shadcn@latest add card input label select dialog badge table tabs separator avatar dropdown-menu form sonner)"
     ]
   }
 }

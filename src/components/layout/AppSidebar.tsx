@@ -15,6 +15,7 @@ import {
   X,
   LogOut,
   ShieldCheck,
+  FileX2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PlanTier } from "@prisma/client";
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calculadora-rural", label: "Impostos Rurais", icon: Calculator },
   { href: "/calculadora-rh", label: "Cálculo CLT", icon: Users, requiredPlan: "PRO" as PlanTier },
+  { href: "/calculadora-rescisao", label: "Rescisão CLT", icon: FileX2, requiredPlan: "ENTERPRISE" as PlanTier },
   { href: "/historico", label: "Histórico", icon: History, requiredPlan: "PRO" as PlanTier },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
@@ -111,7 +113,10 @@ function SidebarContent({
       <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
-          const isLocked = item.requiredPlan && planTier === "FREE";
+          const PLAN_ORDER = { FREE: 0, PRO: 1, ENTERPRISE: 2 };
+          const isLocked = item.requiredPlan
+            ? PLAN_ORDER[planTier] < PLAN_ORDER[item.requiredPlan]
+            : false;
 
           return (
             <Link
@@ -130,7 +135,7 @@ function SidebarContent({
               <span className="flex-1">{item.label}</span>
               {isLocked && (
                 <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
-                  PRO
+                  {item.requiredPlan}
                 </Badge>
               )}
               {isActive && !isLocked && (

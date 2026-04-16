@@ -33,6 +33,7 @@ enum PlanTier {
 enum CalculationType {
   RURAL_TAX
   RH_CLT
+  RESCISAO
 }
 
 enum BrazilianState {
@@ -251,6 +252,11 @@ model Calculation {
   sistemaS       Decimal? @db.Decimal(12, 2)
   totalCost      Decimal? @db.Decimal(12, 2)
   ratFapPercent  Decimal? @db.Decimal(5, 4)
+
+  // Rescisão specific
+  admissionDate    DateTime?
+  terminationDate  DateTime?
+  tipoRescisao     String?
 
   ratesSnapshot Json
 
