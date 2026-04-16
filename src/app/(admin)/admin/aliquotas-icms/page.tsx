@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { IcmsRateGrid } from "@/components/admin/IcmsRateGrid";
 import type { Metadata } from "next";
