@@ -70,7 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.id = user.id;
+        token.id = user.id ?? "";
         token.role = (user as any).role;
         token.isBlocked = (user as any).isBlocked;
         // ADMINs always get ENTERPRISE-level access regardless of subscription
