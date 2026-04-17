@@ -30,7 +30,7 @@ export default function CalculadoraRhPage() {
       sistemaS: result.sistemaS,
       totalCost: result.totalMonthlyCost,
       ratFapPercent: snapshot.ratFapRate,
-      ratesSnapshot: snapshot,
+      ratesSnapshot: { ...snapshot, result },
     };
 
     const res = await fetch("/api/calculations", {

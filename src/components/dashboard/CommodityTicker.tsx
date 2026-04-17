@@ -12,7 +12,7 @@ interface CommodityItem {
   unit: string;
   price: number;
   variation: number;
-  source: "B3" | "CBOT" | "ICE" | "FX";
+  source: "CBOT" | "ICE" | "CME" | "FX";
   isFx?: boolean;
 }
 
@@ -23,9 +23,9 @@ interface ApiResponse {
 }
 
 const SOURCE_COLORS: Record<string, string> = {
-  B3:   "bg-blue-600/80 text-blue-100",
   CBOT: "bg-amber-700/80 text-amber-100",
   ICE:  "bg-violet-700/80 text-violet-100",
+  CME:  "bg-blue-600/80 text-blue-100",
   FX:   "bg-emerald-700/80 text-emerald-100",
 };
 

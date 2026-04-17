@@ -25,7 +25,7 @@ export default function CalculadoraRescisaoPage() {
       admissionDate: snapshot.admissionDate,
       terminationDate: snapshot.terminationDate,
       tipoRescisao: snapshot.tipoRescisao,
-      ratesSnapshot: snapshot,
+      ratesSnapshot: { ...snapshot, result },
     };
 
     const res = await fetch("/api/calculations", {

@@ -93,7 +93,9 @@ export function CalculationDetailModal({ id, onClose }: CalculationDetailModalPr
     }
 
     if (calc.type === "RH_CLT") {
-      const result = calculateRhClt({
+      // Use stored result if available (ensures displayed value matches what was saved)
+      const stored = snap.result as Parameters<typeof RhCltResult>[0]["result"] | undefined;
+      const result = stored ?? calculateRhClt({
         grossSalary: Number(calc.grossSalary ?? snap.grossSalary),
         ratFapRate: Number(calc.ratFapPercent ?? snap.ratFapRate ?? 0.01),
       });
@@ -101,7 +103,9 @@ export function CalculationDetailModal({ id, onClose }: CalculationDetailModalPr
     }
 
     if (calc.type === "RESCISAO") {
-      const result = calcRescisao({
+      // Use stored result if available (ensures displayed value matches what was saved)
+      const stored = snap.result as Parameters<typeof RescisaoResult>[0]["result"] | undefined;
+      const result = stored ?? calcRescisao({
         grossSalary: Number(calc.grossSalary ?? snap.grossSalary),
         admissionDate: String(calc.admissionDate ?? snap.admissionDate ?? ""),
         terminationDate: String(calc.terminationDate ?? snap.terminationDate ?? ""),
