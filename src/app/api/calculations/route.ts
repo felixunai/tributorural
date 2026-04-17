@@ -50,7 +50,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const plan = session.user.role === "ADMIN" ? "ENTERPRISE" : session.user.planTier;
+  // Read planTier from DB (JWT may be stale after upgrade)
+  const sub = await prisma.subscription.findUnique({
+    where: { userId: session.user.id },
+    select: { plan: { select: { tier: true } } },
+  });
+  const planTier = session.user.role === "ADMIN" ? "ENTERPRISE" : (sub?.plan.tier ?? "FREE");
+  const plan = planTier;
   const saveLimit = MONTHLY_SAVE_LIMIT[plan] ?? null;
 
   // FREE: cannot save at all
@@ -127,8 +133,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Read planTier from DB (JWT may be stale)
+  const subGet = await prisma.subscription.findUnique({
+    where: { userId: session.user.id },
+    select: { plan: { select: { tier: true } } },
+  });
+  const planTierGet = session.user.role === "ADMIN" ? "ENTERPRISE" : (subGet?.plan.tier ?? "FREE");
+
   // Only PRO+ can access history
-  if (!["PRO", "ENTERPRISE"].includes(session.user.planTier)) {
+  if (!["PRO", "ENTERPRISE"].includes(planTierGet)) {
     return NextResponse.json({ error: "Plano PRO necessário para acessar o histórico" }, { status: 403 });
   }
 
@@ -140,8 +153,7 @@ export async function GET(req: Request) {
   const skip = (page - 1) * limit;
 
   // Apply history retention filter
-  const retentionDays =
-    ["PRO", "ENTERPRISE"].includes(session.user.planTier) ? -1 : 90;
+  const retentionDays = ["PRO", "ENTERPRISE"].includes(planTierGet) ? -1 : 90;
 
   const dateFilter =
     retentionDays > 0

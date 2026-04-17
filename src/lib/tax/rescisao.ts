@@ -270,7 +270,7 @@ export function calcRescisao(input: RescisaoInput): RescisaoResult {
       label: "IRRF",
       amount: -irrfEmpregado,
       kind: "deduction",
-      description: "Imposto de renda retido na fonte (tabela 2024)",
+      description: "IRRF (tabela 2026 — Lei 15.079/2025)",
     });
   }
 

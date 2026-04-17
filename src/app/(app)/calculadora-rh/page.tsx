@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { usePlanTier } from "@/components/providers/PlanProvider";
 import { RhCltForm } from "@/components/calculadora/rh/RhCltForm";
 import { RhCltResult } from "@/components/calculadora/rh/RhCltResult";
 import { SaveCalculationModal } from "@/components/shared/SaveCalculationModal";
@@ -10,7 +10,7 @@ import { formatBRL } from "@/lib/utils";
 import type { RhCltResult as Result } from "@/lib/tax/rhClt";
 
 export default function CalculadoraRhPage() {
-  const { data: session } = useSession();
+  const planTier = usePlanTier();
   const [result, setResult] = useState<Result | null>(null);
   const [snapshot, setSnapshot] = useState<Record<string, unknown>>({});
   const [saveOpen, setSaveOpen] = useState(false);
@@ -59,7 +59,7 @@ export default function CalculadoraRhPage() {
             <RhCltResult
               result={result}
               onSave={() => setSaveOpen(true)}
-              canSave={["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "")}
+              canSave={["PRO", "ENTERPRISE"].includes(planTier)}
             />
 
             <SaveCalculationModal

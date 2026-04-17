@@ -28,18 +28,29 @@ export interface RhCltResult {
   salarioLiquido: number;
 }
 
-// Sistema S breakdown: SENAI 1% + SESI 1.5% + SEBRAE 0.6% + INCRA 0.2% = 3.3%
+// Sistema S: SENAI 1% + SESI 1.5% + SEBRAE 0.6% + INCRA 0.2% = 3.3%
 const SISTEMA_S_RATE = 0.033;
 
 /**
- * INSS empregado – tabela progressiva 2024
+ * INSS empregado — tabela progressiva 2025
+ * Portaria MPS 1.284/2024, vigência 01/01/2025
+ *
+ * Faixas (salário mínimo 2025 = R$ 1.518,00):
+ *   Até R$ 1.518,00         → 7,5%
+ *   R$ 1.518,01–2.793,88    → 9%
+ *   R$ 2.793,89–4.190,83    → 12%
+ *   R$ 4.190,84–8.157,41    → 14%
+ *
+ * Teto máximo de contribuição: R$ 951,62/mês
  */
 export function calcInssEmpregado(salary: number): number {
+  if (salary <= 0) return 0;
+
   const faixas = [
-    { ate: 1412.00,   rate: 0.075 },
-    { ate: 2666.68,   rate: 0.09  },
-    { ate: 4000.03,   rate: 0.12  },
-    { ate: 7786.02,   rate: 0.14  },
+    { ate: 1518.00, rate: 0.075 },
+    { ate: 2793.88, rate: 0.09  },
+    { ate: 4190.83, rate: 0.12  },
+    { ate: 8157.41, rate: 0.14  },
   ];
 
   let inss = 0;
@@ -51,21 +62,51 @@ export function calcInssEmpregado(salary: number): number {
     prevLimit = faixa.ate;
     if (salary <= faixa.ate) break;
   }
-  // Teto: se salário > 7.786,02, calcula só até o teto
-  return Math.min(inss, 908.86);
+
+  return Math.min(inss, 951.62); // teto 2025
 }
 
 /**
- * IRRF – tabela 2024 (sem dependentes)
- * Base = salário bruto − INSS empregado
+ * IRRF mensal empregado — tabela 2026 + abatimento complementar
+ * Lei 15.079/2025 — isenção efetiva para base de cálculo ≤ R$ 5.000
+ *
+ * Tabela progressiva (base = salário bruto − INSS):
+ *   Até R$ 2.824,00         → isento
+ *   R$ 2.824,01–3.751,05    → 7,5%  − R$ 211,80
+ *   R$ 3.751,06–4.664,68    → 15%   − R$ 493,12
+ *   R$ 4.664,69–5.625,28    → 22,5% − R$ 843,57
+ *   Acima de R$ 5.625,28    → 27,5% − R$ 1.125,59
+ *
+ * Abatimento complementar:
+ *   Base ≤ R$ 5.000 → IRRF = 0 (isenção total)
+ *   Base entre R$ 5.000 e R$ 7.000 → redução proporcional linear
+ *   Base > R$ 7.000 → tabela progressiva integral
+ *
+ * @param grossSalary  salário bruto (ou base tributável bruta, ex: 13° / férias)
+ * @param inssEmpregado  INSS já calculado a deduzir
  */
 export function calcIrrfEmpregado(grossSalary: number, inssEmpregado: number): number {
   const base = grossSalary - inssEmpregado;
-  if (base <= 2259.20) return 0;
-  if (base <= 2826.65) return base * 0.075 - 169.44;
-  if (base <= 3751.05) return base * 0.15  - 381.44;
-  if (base <= 4664.68) return base * 0.225 - 662.77;
-  return base * 0.275 - 896.00;
+  if (base <= 0) return 0;
+
+  // Tabela progressiva
+  let irrf: number;
+  if (base <= 2824.00)      irrf = 0;
+  else if (base <= 3751.05) irrf = base * 0.075 - 211.80;
+  else if (base <= 4664.68) irrf = base * 0.15  - 493.12;
+  else if (base <= 5625.28) irrf = base * 0.225 - 843.57;
+  else                      irrf = base * 0.275 - 1125.59;
+
+  if (irrf <= 0) return 0;
+
+  // Abatimento complementar (Lei 15.079/2025)
+  if (base <= 5000.00) return 0;
+  if (base <= 7000.00) {
+    // Redução linear: 100% de desconto em R$5.000, zero desconto em R$7.000
+    irrf = irrf * (base - 5000.00) / 2000.00;
+  }
+
+  return Math.max(0, irrf);
 }
 
 export function calculateRhClt(input: RhCltInput): RhCltResult {
@@ -84,8 +125,8 @@ export function calculateRhClt(input: RhCltInput): RhCltResult {
   const encargosPercentage = s > 0 ? totalEncargos / s : 0;
 
   // Employee net salary
-  const inssEmpregado = calcInssEmpregado(s);
-  const irrfEmpregado = Math.max(0, calcIrrfEmpregado(s, inssEmpregado));
+  const inssEmpregado  = calcInssEmpregado(s);
+  const irrfEmpregado  = Math.max(0, calcIrrfEmpregado(s, inssEmpregado));
   const salarioLiquido = s - inssEmpregado - irrfEmpregado;
 
   const breakdown: RhBreakdownItem[] = [

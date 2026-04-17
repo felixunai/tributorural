@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { usePlanTier } from "@/components/providers/PlanProvider";
 import { RescisaoForm } from "@/components/calculadora/rescisao/RescisaoForm";
 import { RescisaoResult } from "@/components/calculadora/rescisao/RescisaoResult";
 import { SaveCalculationModal } from "@/components/shared/SaveCalculationModal";
@@ -10,7 +10,7 @@ import { formatBRL } from "@/lib/utils";
 import type { RescisaoResult as Result } from "@/lib/tax/rescisao";
 
 export default function CalculadoraRescisaoPage() {
-  const { data: session } = useSession();
+  const planTier = usePlanTier();
   const [result, setResult] = useState<Result | null>(null);
   const [snapshot, setSnapshot] = useState<Record<string, unknown>>({});
   const [saveOpen, setSaveOpen] = useState(false);
@@ -53,7 +53,7 @@ export default function CalculadoraRescisaoPage() {
             <RescisaoResult
               result={result}
               onSave={() => setSaveOpen(true)}
-              canSave={["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "")}
+              canSave={["PRO", "ENTERPRISE"].includes(planTier)}
             />
             <SaveCalculationModal
               open={saveOpen}

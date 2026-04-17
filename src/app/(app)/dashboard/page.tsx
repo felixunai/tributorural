@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Calculator, Users, TrendingUp, ArrowRight, FileX2 } from "lucide-react";
+import { Calculator, Users, TrendingUp, ArrowRight, FileX2, BarChart3 } from "lucide-react";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
 import { RecentCalculationsSection } from "@/components/dashboard/RecentCalculationsSection";
 import { CommodityTicker, CommodityTickerLocked } from "@/components/dashboard/CommodityTicker";
@@ -55,8 +55,9 @@ export default async function DashboardPage() {
   }
   const calcsByDay = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
 
-  const ruralCount = calcsByType.find((c) => c.type === "RURAL_TAX")?._count ?? 0;
-  const rhCount = calcsByType.find((c) => c.type === "RH_CLT")?._count ?? 0;
+  const ruralCount     = calcsByType.find((c) => c.type === "RURAL_TAX")?._count ?? 0;
+  const rhCount        = calcsByType.find((c) => c.type === "RH_CLT")?._count ?? 0;
+  const rescisaoCount  = calcsByType.find((c) => c.type === "RESCISAO")?._count ?? 0;
 
   // Always use DB planTier — JWT may be stale after upgrade
   const planTier =
@@ -98,12 +99,12 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total de cálculos</p>
+                <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-3xl font-bold mt-1">{totalCalcs}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -131,7 +132,7 @@ export default async function DashboardPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Cálculos CLT</p>
+                <p className="text-sm text-muted-foreground">Custo CLT</p>
                 <p className="text-3xl font-bold mt-1">{rhCount}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
@@ -142,6 +143,20 @@ export default async function DashboardPage() {
         </Card>
 
         <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Rescisões</p>
+                <p className="text-3xl font-bold mt-1">{rescisaoCount}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                <FileX2 className="h-6 w-6 text-orange-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-2 lg:col-span-1">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
