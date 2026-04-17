@@ -7,6 +7,8 @@ import {
   MapPin,
   Zap,
   Lock,
+  FileX2,
+  TrendingUp,
 } from "lucide-react";
 
 const features = [
@@ -38,6 +40,15 @@ const features = [
     accentBorder: "oklch(0.62 0.17 200 / 0.25)",
   },
   {
+    icon: FileX2,
+    title: "Calculadora de Rescisão",
+    description:
+      "Calcule saldo de salário, aviso prévio, 13° proporcional, férias vencidas, FGTS e multa de 40% com base na Lei 12.506/2011.",
+    accent: "oklch(0.68 0.18 50)",
+    accentLight: "oklch(0.68 0.18 50 / 0.1)",
+    accentBorder: "oklch(0.68 0.18 50 / 0.25)",
+  },
+  {
     icon: BarChart3,
     title: "Gráficos e dashboards",
     description:
@@ -45,6 +56,15 @@ const features = [
     accent: "oklch(0.68 0.18 35)",
     accentLight: "oklch(0.68 0.18 35 / 0.1)",
     accentBorder: "oklch(0.68 0.18 35 / 0.25)",
+  },
+  {
+    icon: TrendingUp,
+    title: "Cotações B3/CBOT em tempo real",
+    description:
+      "Acompanhe as cotações de Boi Gordo, Milho, Soja, Café, Açúcar e mais diretamente no dashboard, com atualização automática.",
+    accent: "oklch(0.65 0.16 165)",
+    accentLight: "oklch(0.65 0.16 165 / 0.1)",
+    accentBorder: "oklch(0.65 0.16 165 / 0.25)",
   },
   {
     icon: Download,
@@ -60,9 +80,9 @@ const features = [
     title: "Dados sempre atualizados",
     description:
       "Alíquotas ICMS e taxas editáveis pelo administrador. O sistema reflete a legislação vigente sem necessidade de atualização manual.",
-    accent: "oklch(0.65 0.16 165)",
-    accentLight: "oklch(0.65 0.16 165 / 0.1)",
-    accentBorder: "oklch(0.65 0.16 165 / 0.25)",
+    accent: "oklch(0.55 0.14 220)",
+    accentLight: "oklch(0.55 0.14 220 / 0.1)",
+    accentBorder: "oklch(0.55 0.14 220 / 0.25)",
   },
 ];
 

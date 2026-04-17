@@ -48,9 +48,13 @@ export function RescisaoForm({ onResult }: RescisaoFormProps) {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      grossSalary: "",
+      admissionDate: "",
+      terminationDate: "",
       tipoRescisao: "SEM_JUSTA_CAUSA",
       avisoPrevioTrabalhado: "false",
       feriasVencidasPeriodos: "0",
+      fgtsBalance: "",
     },
   });
 

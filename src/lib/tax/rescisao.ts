@@ -155,10 +155,27 @@ export function calcRescisao(input: RescisaoInput): RescisaoResult {
     descontoAvisoPrevio = valorAvisoPrevio;
   }
 
-  // 9. INSS e IRRF do empregado (incide sobre verbas salariais)
-  const baseInss = saldoSalario + avisoPrevioIndenizado + decimoTerceiroProporcional;
-  const inssEmpregado    = calcInssEmpregado(baseInss);
-  const irrfEmpregado    = Math.max(0, calcIrrfEmpregado(baseInss, inssEmpregado));
+  // 9. INSS e IRRF do empregado
+  //
+  // INSS base: todas as verbas de natureza salarial, incluindo férias.
+  // O teto mensal (R$ 908,86) é aplicado ao total — abordagem GRRF.
+  const baseInss =
+    saldoSalario +
+    avisoPrevioIndenizado +
+    decimoTerceiroProporcional +
+    feriasPropcionais +
+    feriasVencidas;
+  const inssEmpregado = calcInssEmpregado(baseInss);
+
+  // IRRF base: apenas verbas verdadeiramente salariais.
+  //   • Aviso prévio indenizado = isento (IN RFB 1.500/2014, art. 5, I)
+  //   • Férias indenizadas (proporcionais + vencidas) = isentas (OJ 386 TST / STJ)
+  //   • 13° proporcional e saldo de salário = tributáveis
+  // Dedução de INSS proporcional sobre a base tributável de IRRF.
+  const irrfBase = saldoSalario + decimoTerceiroProporcional;
+  const irrfBaseShare = baseInss > 0 ? irrfBase / baseInss : 0;
+  const inssDeductIrrf = inssEmpregado * irrfBaseShare;
+  const irrfEmpregado = Math.max(0, calcIrrfEmpregado(irrfBase, inssDeductIrrf));
 
   // ── Totals ────────────────────────────────────────────────────
   const totalBruto =

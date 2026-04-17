@@ -37,7 +37,26 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
   if (!userId) return;
 
   const priceId = sub.items.data[0]?.price.id;
-  const plan = priceId ? await getPlanByStripePrice(priceId) : null;
+  let plan = priceId ? await getPlanByStripePrice(priceId) : null;
+
+  // Fallback: use planTier stored in subscription metadata (set during checkout)
+  if (!plan && sub.metadata?.planTier) {
+    plan = await prisma.plan.findUnique({
+      where: { tier: sub.metadata.planTier as PlanTier },
+      select: { id: true, tier: true },
+    });
+  }
+
+  // Update the plan's stripePriceId in DB so future lookups work
+  if (plan && priceId) {
+    const isMonthly = !sub.items.data[0]?.price.recurring?.interval || sub.items.data[0]?.price.recurring?.interval === "month";
+    await prisma.plan.update({
+      where: { id: plan.id },
+      data: isMonthly
+        ? { stripePriceIdMonthly: priceId }
+        : { stripePriceIdYearly: priceId },
+    });
+  }
 
   const freePlan = await prisma.plan.findUnique({ where: { tier: "FREE" } });
   const planId = plan?.id ?? freePlan!.id;

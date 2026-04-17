@@ -33,7 +33,7 @@ export function RhCltForm({ onResult }: RhCltFormProps) {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { ratFapRate: "0.01" },
+    defaultValues: { grossSalary: "", ratFapRate: "0.01" },
   });
 
   async function onSubmit(data: FormData) {

@@ -9,7 +9,9 @@ import { Calculator, Users, TrendingUp, ArrowRight, FileX2 } from "lucide-react"
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
 import { RecentCalculationsSection } from "@/components/dashboard/RecentCalculationsSection";
 import { CommodityTicker, CommodityTickerLocked } from "@/components/dashboard/CommodityTicker";
+import { UpgradeSuccessRefresher } from "@/components/dashboard/UpgradeSuccessRefresher";
 import { format } from "date-fns";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -74,6 +76,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <Suspense><UpgradeSuccessRefresher /></Suspense>
       {/* Commodity ticker */}
       {isPro ? <CommodityTicker /> : <CommodityTickerLocked />}
 

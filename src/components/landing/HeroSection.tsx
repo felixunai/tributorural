@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calculator, Users, TrendingDown, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Calculator, Users, FileX2, CheckCircle2 } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -31,8 +31,8 @@ export function HeroSection() {
         </h1>
 
         <p className="mt-6 text-center text-lg sm:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
-          ICMS interestadual, PIS, COFINS, FUNRURAL e custo real CLT. Precisão fiscal
-          para produtores rurais e consultores do agronegócio.
+          ICMS interestadual, PIS, COFINS, FUNRURAL, custo CLT real e rescisão trabalhista.
+          Precisão fiscal para produtores rurais e consultores do agronegócio.
         </p>
 
         {/* Trust bullets */}
@@ -96,12 +96,12 @@ export function HeroSection() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 text-left hover:border-[oklch(0.84_0.21_128)/0.4] hover:bg-white/8 transition-all">
-            <div className="h-11 w-11 rounded-xl bg-[oklch(0.62_0.17_200)/0.2] border border-[oklch(0.62_0.17_200)/0.3] flex items-center justify-center mb-4">
-              <TrendingDown className="h-5 w-5 text-[oklch(0.72_0.17_200)]" />
+            <div className="h-11 w-11 rounded-xl bg-[oklch(0.68_0.18_50)/0.2] border border-[oklch(0.68_0.18_50)/0.3] flex items-center justify-center mb-4">
+              <FileX2 className="h-5 w-5 text-[oklch(0.78_0.18_50)]" />
             </div>
-            <h3 className="font-heading font-semibold text-white">Gráficos e Histórico</h3>
+            <h3 className="font-heading font-semibold text-white">Rescisão CLT</h3>
             <p className="text-sm text-white/50 mt-1.5 leading-relaxed">
-              Visualize a carga tributária e acompanhe a evolução dos seus cálculos.
+              Aviso prévio, 13°, férias, FGTS e multa de 40% — tudo calculado automaticamente.
             </p>
           </div>
         </div>

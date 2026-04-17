@@ -180,7 +180,7 @@ function SidebarContent({
         </div>
 
         <button
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={() => signOut({ callbackUrl: "/login" })}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
         >
           <LogOut className="h-4 w-4 shrink-0" />

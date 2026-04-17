@@ -78,10 +78,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.subStatus = (user as any).subStatus ?? null;
       }
 
-      // Refresh subscription data on session update
-      if (trigger === "update" && session?.planTier) {
-        token.planTier = session.planTier;
-        token.subStatus = session.subStatus;
+      // Refresh subscription data on session update — re-fetch from DB
+      if (trigger === "update") {
+        const userId = token.id as string;
+        if (userId) {
+          const fresh = await prisma.subscription.findUnique({
+            where: { userId },
+            include: { plan: true },
+          });
+          token.planTier = (token.role as string) === "ADMIN"
+            ? "ENTERPRISE"
+            : (fresh?.plan.tier ?? "FREE");
+          token.subStatus = fresh?.status ?? null;
+        }
       }
 
       return token;

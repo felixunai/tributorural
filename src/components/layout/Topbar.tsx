@@ -95,7 +95,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
 
             <div className="border-t mt-1 pt-1">
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => signOut({ callbackUrl: "/login" })}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-destructive/10 text-destructive transition-colors text-left"
               >
                 <LogOut className="h-4 w-4" />
