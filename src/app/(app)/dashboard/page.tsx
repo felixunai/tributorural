@@ -149,7 +149,7 @@ export default async function DashboardPage() {
                 variant={session!.user.planTier === "FREE" ? "secondary" : "default"}
                 className="text-xs"
               >
-                {session!.user.planTier}
+                {session!.user.planTier === "FREE" ? "FREE" : "PRO"}
               </Badge>
             </div>
           </CardContent>
