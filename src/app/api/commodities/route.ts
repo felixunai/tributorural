@@ -4,31 +4,14 @@ import { prisma } from "@/lib/prisma";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
-// ─── Dólar via Yahoo Finance ──────────────────────────────────────────
-async function fetchUsdBrl(): Promise<number> {
-  try {
-    const url = "https://query2.finance.yahoo.com/v8/finance/chart/BRL=X?interval=1d&range=1d";
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; TributoRural/1.0)" },
-      cache: "no-store",
-    });
-    if (!res.ok) return 5.8;
-    const json = await res.json();
-    return (json?.chart?.result?.[0]?.meta?.regularMarketPrice as number) ?? 5.8;
-  } catch {
-    return 5.8;
-  }
-}
-
-// ─── B3 commodities ───────────────────────────────────────────────────
-// Mês-código padrão CBOT/B3 (igual ao CME)
+// Mês-código padrão futuros (CBOT / B3)
 const MONTH_CODES = ["F","G","H","J","K","M","N","Q","U","V","X","Z"];
 
+// ─── B3: BGI, CCM, SJC ───────────────────────────────────────────────
 const B3_CONTRACTS = [
   { root: "BGI", label: "Boi Gordo", unit: "R$/arroba",  usdQuoted: false },
   { root: "CCM", label: "Milho",     unit: "R$/sc 60kg", usdQuoted: false },
-  { root: "ICF", label: "Café",      unit: "R$/sc 60kg", usdQuoted: false },
-  // Soja na B3 é cotada em USD/saca — converte com BRL=X
+  // SJC cotado em USD na B3 — converte com BRL=X
   { root: "SJC", label: "Soja",      unit: "R$/sc 60kg", usdQuoted: true  },
 ] as const;
 
@@ -45,17 +28,12 @@ async function fetchB3(symbol: string): Promise<{ price: number; variation: numb
     });
     if (!res.ok) return null;
     const json = await res.json();
-    // Aceita tanto com quanto sem verificação de BizSts
-    if (json?.BizSts?.cd && json.BizSts.cd !== "OK") return null;
-    const scty = json?.Trad?.[0]?.scty;
-    if (!scty) return null;
-    const qtn = scty.SctyQtn;
-    // Tenta diferentes campos de preço
-    const price = qtn?.curPrc ?? qtn?.lstPrc ?? qtn?.opnPrc;
+    if (json?.BizSts?.cd === "NOK") return null;
+    const qtn = json?.Trad?.[0]?.scty?.SctyQtn;
+    if (!qtn) return null;
+    const price = qtn.curPrc ?? qtn.opngPric;
     if (!price || price <= 0) return null;
-    // prcFlcn já vem em % na B3 (ex: -0.25 = -0.25%)
-    const variation = qtn?.prcFlcn ?? 0;
-    return { price: Number(price), variation: Number(variation) };
+    return { price: Number(price), variation: Number(qtn.prcFlcn ?? 0) };
   } catch {
     return null;
   }
@@ -63,20 +41,42 @@ async function fetchB3(symbol: string): Promise<{ price: number; variation: numb
 
 async function findFrontMonth(root: string): Promise<{ symbol: string; price: number; variation: number } | null> {
   const now = new Date();
-  // Testa os próximos 6 vencimentos a partir do mês atual
-  const candidates = Array.from({ length: 6 }, (_, i) => {
+  // Tenta 8 vencimentos a partir do mês atual
+  const candidates = Array.from({ length: 8 }, (_, i) => {
     const mi = (now.getMonth() + i) % 12;
     const yr = now.getFullYear() + Math.floor((now.getMonth() + i) / 12);
     return `${root}${MONTH_CODES[mi]}${String(yr).slice(-2)}`;
   });
-
-  const results = await Promise.allSettled(candidates.map((sym) => fetchB3(sym).then((r) => ({ sym, r }))));
+  const results = await Promise.allSettled(
+    candidates.map((symbol) => fetchB3(symbol).then((r) => r ? { symbol, ...r } : null))
+  );
   for (const res of results) {
-    if (res.status === "fulfilled" && res.value.r) {
-      return { symbol: res.value.sym, ...res.value.r };
-    }
+    if (res.status === "fulfilled" && res.value) return res.value;
   }
   return null;
+}
+
+// ─── Yahoo Finance: Café (ICE KC=F) + Dólar ──────────────────────────
+// KC=F: ICE Café Arábica, cotado em USX (centavos USD) por libra
+// 1 saca 60kg = 132.277 lbs → preço/saca = (USX/100) * 132.277 * usdBrl
+async function fetchYahoo(symbol: string): Promise<{ price: number; prev: number } | null> {
+  try {
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; TributoRural/1.0)" },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const meta = json?.chart?.result?.[0]?.meta;
+    if (!meta?.regularMarketPrice) return null;
+    return {
+      price: meta.regularMarketPrice as number,
+      prev: (meta.chartPreviousClose ?? meta.regularMarketPreviousClose ?? meta.regularMarketPrice) as number,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ─── Result shape ─────────────────────────────────────────────────────
@@ -86,37 +86,39 @@ export type CommodityRow = {
   unit: string;
   price: number;
   variation: number;
-  source: "B3" | "FX";
+  source: "B3" | "ICE" | "FX";
 };
 
 async function buildData(): Promise<CommodityRow[]> {
-  const [usdBrl, ...b3Results] = await Promise.all([
-    fetchUsdBrl(),
-    ...B3_CONTRACTS.map((c) => findFrontMonth(c.root).then((r) => ({ cfg: c, r }))),
+  const [b3Fetches, yahooFx, yahooCafe] = await Promise.all([
+    Promise.allSettled(B3_CONTRACTS.map((c) => findFrontMonth(c.root).then((r) => ({ cfg: c, r })))),
+    fetchYahoo("BRL=X"),
+    fetchYahoo("KC=F"),
   ]);
 
+  const usdBrl = yahooFx?.price ?? 5.8;
   const rows: CommodityRow[] = [];
 
   // Dólar
-  rows.push({
-    symbol: "BRL=X",
-    label: "Dólar",
-    unit: "R$/USD",
-    price: parseFloat(usdBrl.toFixed(4)),
-    variation: 0, // variação do dólar calculada abaixo se necessário
-    source: "FX",
-  });
+  if (yahooFx) {
+    const variation = yahooFx.prev ? ((yahooFx.price - yahooFx.prev) / yahooFx.prev) * 100 : 0;
+    rows.push({
+      symbol: "BRL=X",
+      label: "Dólar",
+      unit: "R$/USD",
+      price: parseFloat(yahooFx.price.toFixed(4)),
+      variation: parseFloat(variation.toFixed(2)),
+      source: "FX",
+    });
+  }
 
-  // Commodities B3
-  for (const { cfg, r } of b3Results) {
-    if (!r) continue;
+  // B3: Boi Gordo, Milho, Soja
+  for (const res of b3Fetches) {
+    if (res.status === "rejected" || !res.value.r) continue;
+    const { cfg, r } = res.value;
     let price = r.price;
-    // SJC cotada em USD → converte para BRL
-    if (cfg.usdQuoted) {
-      price = parseFloat((r.price * usdBrl).toFixed(2));
-    } else {
-      price = parseFloat(r.price.toFixed(2));
-    }
+    if (cfg.usdQuoted) price = parseFloat((r.price * usdBrl).toFixed(2));
+    else price = parseFloat(r.price.toFixed(2));
     rows.push({
       symbol: r.symbol,
       label: cfg.label,
@@ -124,6 +126,21 @@ async function buildData(): Promise<CommodityRow[]> {
       price,
       variation: parseFloat(r.variation.toFixed(2)),
       source: "B3",
+    });
+  }
+
+  // Café — ICE KC=F (B3/ICF sem liquidez)
+  if (yahooCafe) {
+    const pricePerSaca = (yahooCafe.price / 100) * usdBrl * 132.277;
+    const prevPerSaca  = (yahooCafe.prev  / 100) * usdBrl * 132.277;
+    const variation = prevPerSaca ? ((pricePerSaca - prevPerSaca) / prevPerSaca) * 100 : 0;
+    rows.push({
+      symbol: "KC=F",
+      label: "Café",
+      unit: "R$/sc 60kg",
+      price: parseFloat(pricePerSaca.toFixed(2)),
+      variation: parseFloat(variation.toFixed(2)),
+      source: "ICE",
     });
   }
 
@@ -146,13 +163,11 @@ export async function GET() {
   if (!(await isPro(session.user.id, session.user.role))) {
     return NextResponse.json({ error: "PRO required" }, { status: 403 });
   }
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cached = await (prisma.commodityCache as any).findUnique({ where: { id: "main" } });
   if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < CACHE_TTL_MS) {
     return NextResponse.json({ data: cached.data, fetchedAt: cached.fetchedAt, stale: false });
   }
-
   try {
     const data = await buildData();
     const fetchedAt = new Date();
@@ -175,7 +190,6 @@ export async function POST() {
   if (!(await isPro(session.user.id, session.user.role))) {
     return NextResponse.json({ error: "PRO required" }, { status: 403 });
   }
-
   try {
     const data = await buildData();
     const fetchedAt = new Date();
