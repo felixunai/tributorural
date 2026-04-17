@@ -3,18 +3,15 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
-
-// Mês-código padrão futuros (CBOT / B3)
 const MONTH_CODES = ["F","G","H","J","K","M","N","Q","U","V","X","Z"];
 
-// ─── B3: BGI, CCM, SJC ───────────────────────────────────────────────
 const B3_CONTRACTS = [
   { root: "BGI", label: "Boi Gordo", unit: "R$/arroba",  usdQuoted: false },
   { root: "CCM", label: "Milho",     unit: "R$/sc 60kg", usdQuoted: false },
-  // SJC cotado em USD na B3 — converte com BRL=X
   { root: "SJC", label: "Soja",      unit: "R$/sc 60kg", usdQuoted: true  },
 ] as const;
 
+// ─── B3 cotacao API ───────────────────────────────────────────────────
 async function fetchB3(symbol: string): Promise<{ price: number; variation: number } | null> {
   try {
     const url = `https://cotacao.b3.com.br/mds/api/v1/InstrumentQuotation/${symbol}`;
@@ -39,16 +36,16 @@ async function fetchB3(symbol: string): Promise<{ price: number; variation: numb
   }
 }
 
+// Tenta vencimentos do mês atual até +7 meses em paralelo
 async function findFrontMonth(root: string): Promise<{ symbol: string; price: number; variation: number } | null> {
   const now = new Date();
-  // Tenta 8 vencimentos a partir do mês atual
   const candidates = Array.from({ length: 8 }, (_, i) => {
     const mi = (now.getMonth() + i) % 12;
     const yr = now.getFullYear() + Math.floor((now.getMonth() + i) / 12);
     return `${root}${MONTH_CODES[mi]}${String(yr).slice(-2)}`;
   });
   const results = await Promise.allSettled(
-    candidates.map((symbol) => fetchB3(symbol).then((r) => r ? { symbol, ...r } : null))
+    candidates.map((symbol) => fetchB3(symbol).then((r) => (r ? { symbol, ...r } : null)))
   );
   for (const res of results) {
     if (res.status === "fulfilled" && res.value) return res.value;
@@ -56,9 +53,8 @@ async function findFrontMonth(root: string): Promise<{ symbol: string; price: nu
   return null;
 }
 
-// ─── Yahoo Finance: Café (ICE KC=F) + Dólar ──────────────────────────
-// KC=F: ICE Café Arábica, cotado em USX (centavos USD) por libra
-// 1 saca 60kg = 132.277 lbs → preço/saca = (USX/100) * 132.277 * usdBrl
+// ─── Yahoo Finance: Café (ICE KC=F) + Dólar (BRL=X) ─────────────────
+// KC=F cotado em USX/libra → 1 saca 60kg = 132.277 lbs
 async function fetchYahoo(symbol: string): Promise<{ price: number; prev: number } | null> {
   try {
     const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
@@ -90,10 +86,10 @@ export type CommodityRow = {
 };
 
 async function buildData(): Promise<CommodityRow[]> {
-  const [b3Fetches, yahooFx, yahooCafe] = await Promise.all([
-    Promise.allSettled(B3_CONTRACTS.map((c) => findFrontMonth(c.root).then((r) => ({ cfg: c, r })))),
+  const [yahooFx, yahooCafe, ...b3Fetches] = await Promise.all([
     fetchYahoo("BRL=X"),
     fetchYahoo("KC=F"),
+    ...B3_CONTRACTS.map((c) => findFrontMonth(c.root).then((r) => ({ cfg: c, r }))),
   ]);
 
   const usdBrl = yahooFx?.price ?? 5.8;
@@ -113,12 +109,12 @@ async function buildData(): Promise<CommodityRow[]> {
   }
 
   // B3: Boi Gordo, Milho, Soja
-  for (const res of b3Fetches) {
-    if (res.status === "rejected" || !res.value.r) continue;
-    const { cfg, r } = res.value;
-    let price = r.price;
-    if (cfg.usdQuoted) price = parseFloat((r.price * usdBrl).toFixed(2));
-    else price = parseFloat(r.price.toFixed(2));
+  for (const item of b3Fetches) {
+    if (!item.r) continue;
+    const { cfg, r } = item;
+    const price = cfg.usdQuoted
+      ? parseFloat((r.price * usdBrl).toFixed(2))
+      : parseFloat(r.price.toFixed(2));
     rows.push({
       symbol: r.symbol,
       label: cfg.label,
@@ -147,7 +143,32 @@ async function buildData(): Promise<CommodityRow[]> {
   return rows;
 }
 
-// ─── API Handlers ─────────────────────────────────────────────────────
+// ─── Cache helpers ────────────────────────────────────────────────────
+async function readCache() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return await (prisma.commodityCache as any).findUnique({ where: { id: "main" } });
+  } catch {
+    return null;
+  }
+}
+
+async function writeCache(data: CommodityRow[]) {
+  const fetchedAt = new Date();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (prisma.commodityCache as any).upsert({
+      where: { id: "main" },
+      create: { id: "main", data, fetchedAt },
+      update: { data, fetchedAt },
+    });
+  } catch {
+    // silently ignore if CommodityCache table not yet migrated
+  }
+  return fetchedAt;
+}
+
+// ─── Auth helper ──────────────────────────────────────────────────────
 async function isPro(userId: string, role: string): Promise<boolean> {
   if (role === "ADMIN") return true;
   const sub = await prisma.subscription.findUnique({
@@ -157,26 +178,22 @@ async function isPro(userId: string, role: string): Promise<boolean> {
   return ["PRO", "ENTERPRISE"].includes(sub?.plan.tier ?? "FREE");
 }
 
+// ─── API Handlers ─────────────────────────────────────────────────────
 export async function GET() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!(await isPro(session.user.id, session.user.role))) {
     return NextResponse.json({ error: "PRO required" }, { status: 403 });
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cached = await (prisma.commodityCache as any).findUnique({ where: { id: "main" } });
+
+  const cached = await readCache();
   if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < CACHE_TTL_MS) {
     return NextResponse.json({ data: cached.data, fetchedAt: cached.fetchedAt, stale: false });
   }
+
   try {
     const data = await buildData();
-    const fetchedAt = new Date();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma.commodityCache as any).upsert({
-      where: { id: "main" },
-      create: { id: "main", data, fetchedAt },
-      update: { data, fetchedAt },
-    });
+    const fetchedAt = await writeCache(data);
     return NextResponse.json({ data, fetchedAt, stale: false });
   } catch {
     if (cached) return NextResponse.json({ data: cached.data, fetchedAt: cached.fetchedAt, stale: true });
@@ -192,13 +209,7 @@ export async function POST() {
   }
   try {
     const data = await buildData();
-    const fetchedAt = new Date();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma.commodityCache as any).upsert({
-      where: { id: "main" },
-      create: { id: "main", data, fetchedAt },
-      update: { data, fetchedAt },
-    });
+    const fetchedAt = await writeCache(data);
     return NextResponse.json({ data, fetchedAt, stale: false });
   } catch (err) {
     return NextResponse.json(
