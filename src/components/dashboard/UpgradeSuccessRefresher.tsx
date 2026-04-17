@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -10,7 +9,6 @@ const RETRY_DELAYS = [0, 2000, 4000, 6000, 10000]; // ms between attempts
 export function UpgradeSuccessRefresher() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { update } = useSession();
 
   useEffect(() => {
     if (searchParams.get("upgrade") !== "success") return;
@@ -21,7 +19,6 @@ export function UpgradeSuccessRefresher() {
 
     (async () => {
       for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
-        // Wait before this attempt (first attempt is immediate)
         if (RETRY_DELAYS[attempt] > 0) {
           await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
         }
@@ -31,8 +28,9 @@ export function UpgradeSuccessRefresher() {
           const data = await res.json();
 
           if (data.planTier && data.planTier !== "FREE") {
-            // DB updated — refresh JWT and reload
-            await update();
+            // DB updated — rewrite JWT cookie directly (bypasses unreliable update())
+            await fetch("/api/subscription/activate", { method: "POST" });
+            await new Promise((r) => setTimeout(r, 300));
             toast.success("Plano atualizado! Bem-vindo ao PRO.", { id: toastId });
             window.location.replace("/dashboard");
             return;
@@ -42,8 +40,9 @@ export function UpgradeSuccessRefresher() {
         }
       }
 
-      // Exhausted retries — refresh anyway (webhook may still arrive)
-      await update();
+      // Exhausted retries — still try to activate in case DB is ahead of sync response
+      await fetch("/api/subscription/activate", { method: "POST" }).catch(() => {});
+      await new Promise((r) => setTimeout(r, 300));
       toast.info("Pagamento recebido. Se o plano não atualizar, faça login novamente.", { id: toastId, duration: 8000 });
       window.location.replace("/dashboard");
     })();
