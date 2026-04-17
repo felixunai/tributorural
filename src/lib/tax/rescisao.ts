@@ -1,5 +1,6 @@
 import { differenceInMonths, differenceInCalendarDays, getDaysInMonth } from "date-fns";
 import { calcInssEmpregado, calcIrrfEmpregado } from "./rhClt";
+import type { InssConfig, IrrfConfig } from "./taxConfig";
 
 export type TipoRescisao =
   | "SEM_JUSTA_CAUSA"
@@ -56,7 +57,7 @@ export interface RescisaoResult {
   items: RescisaoItemResult[];
 }
 
-export function calcRescisao(input: RescisaoInput): RescisaoResult {
+export function calcRescisao(input: RescisaoInput, taxCfg?: { inss?: InssConfig; irrf?: IrrfConfig }): RescisaoResult {
   const {
     grossSalary: s,
     admissionDate,
@@ -165,7 +166,7 @@ export function calcRescisao(input: RescisaoInput): RescisaoResult {
     decimoTerceiroProporcional +
     feriasPropcionais +
     feriasVencidas;
-  const inssEmpregado = calcInssEmpregado(baseInss);
+  const inssEmpregado = calcInssEmpregado(baseInss, taxCfg?.inss);
 
   // IRRF base: apenas verbas verdadeiramente salariais.
   //   • Aviso prévio indenizado = isento (IN RFB 1.500/2014, art. 5, I)
@@ -175,7 +176,7 @@ export function calcRescisao(input: RescisaoInput): RescisaoResult {
   const irrfBase = saldoSalario + decimoTerceiroProporcional;
   const irrfBaseShare = baseInss > 0 ? irrfBase / baseInss : 0;
   const inssDeductIrrf = inssEmpregado * irrfBaseShare;
-  const irrfEmpregado = Math.max(0, calcIrrfEmpregado(irrfBase, inssDeductIrrf));
+  const irrfEmpregado = Math.max(0, calcIrrfEmpregado(irrfBase, inssDeductIrrf, taxCfg?.irrf));
 
   // ── Totals ────────────────────────────────────────────────────
   const totalBruto =

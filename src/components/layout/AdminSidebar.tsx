@@ -9,6 +9,7 @@ import {
   Users,
   Package,
   PercentSquare,
+  Percent,
   CreditCard,
   Sprout,
   ChevronLeft,
@@ -21,6 +22,7 @@ const adminNavItems = [
   { href: "/admin/usuarios", label: "Usuários", icon: Users },
   { href: "/admin/produtos", label: "Produtos Rurais", icon: Package },
   { href: "/admin/aliquotas-icms", label: "Alíquotas ICMS", icon: PercentSquare },
+  { href: "/admin/tabelas-tributarias", label: "Tabelas Tributárias", icon: Percent },
   { href: "/admin/planos", label: "Planos", icon: CreditCard },
 ];
 

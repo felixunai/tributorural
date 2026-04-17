@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { calculateRhClt } from "@/lib/tax/rhClt";
+import { getActiveTaxConfig } from "@/lib/tax/taxConfig";
 import { z } from "zod";
 
 const schema = z.object({
@@ -10,24 +12,24 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (session.user.planTier === "FREE" && session.user.role !== "ADMIN") {
-    return NextResponse.json(
-      { error: "Calculadora CLT requer plano PRO ou superior" },
-      { status: 403 }
-    );
+  const sub = await prisma.subscription.findUnique({
+    where: { userId: session.user.id },
+    select: { plan: { select: { tier: true } } },
+  });
+  const planTier = session.user.role === "ADMIN" ? "ENTERPRISE" : (sub?.plan.tier ?? "FREE");
+
+  if (planTier === "FREE") {
+    return NextResponse.json({ error: "Calculadora CLT requer plano PRO ou superior" }, { status: 403 });
   }
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
 
-  const result = calculateRhClt(parsed.data);
+  const taxCfg = await getActiveTaxConfig();
+  const result = calculateRhClt(parsed.data, taxCfg);
 
   return NextResponse.json({
     result,
