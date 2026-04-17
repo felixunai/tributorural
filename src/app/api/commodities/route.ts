@@ -180,10 +180,19 @@ async function buildData(): Promise<CommodityRow[]> {
 }
 
 // ─── API Handlers ────────────────────────────────────────────────────
+async function isPro(userId: string, role: string): Promise<boolean> {
+  if (role === "ADMIN") return true;
+  const sub = await prisma.subscription.findUnique({
+    where: { userId },
+    select: { plan: { select: { tier: true } } },
+  });
+  return ["PRO", "ENTERPRISE"].includes(sub?.plan.tier ?? "FREE");
+}
+
 export async function GET() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!["PRO", "ENTERPRISE"].includes(session.user.planTier)) {
+  if (!(await isPro(session.user.id, session.user.role))) {
     return NextResponse.json({ error: "PRO required" }, { status: 403 });
   }
 
@@ -212,7 +221,7 @@ export async function GET() {
 export async function POST() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!["PRO", "ENTERPRISE"].includes(session.user.planTier)) {
+  if (!(await isPro(session.user.id, session.user.role))) {
     return NextResponse.json({ error: "PRO required" }, { status: 403 });
   }
 
