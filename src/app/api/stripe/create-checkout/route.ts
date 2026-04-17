@@ -49,6 +49,21 @@ export async function POST(req: Request) {
         metadata: { userId },
       });
       stripeCustomerId = customer.id;
+
+      // Persist the customer ID immediately so /api/subscription/sync can find it
+      if (subscription) {
+        await prisma.subscription.update({
+          where: { userId },
+          data: { stripeCustomerId: customer.id },
+        });
+      } else {
+        const freePlan = await prisma.plan.findUnique({ where: { tier: "FREE" } });
+        if (freePlan) {
+          await prisma.subscription.create({
+            data: { userId, planId: freePlan.id, status: "ACTIVE", stripeCustomerId: customer.id },
+          });
+        }
+      }
     }
 
     const checkoutSession = await stripe.checkout.sessions.create({
