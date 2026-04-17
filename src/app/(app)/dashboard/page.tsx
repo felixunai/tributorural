@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const [totalCalcs, recentCalcs, calcsByType, last30Calcs] = await Promise.all([
+  const [totalCalcs, recentCalcs, calcsByType, last30Calcs, subscription] = await Promise.all([
     prisma.calculation.count({ where: { userId } }),
     prisma.calculation.findMany({
       where: { userId },
@@ -41,6 +41,10 @@ export default async function DashboardPage() {
       select: { createdAt: true },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.subscription.findUnique({
+      where: { userId },
+      select: { plan: { select: { tier: true } } },
+    }),
   ]);
 
   // Group last 30 days by date in JS (avoids $queryRaw BigInt serialization issue)
@@ -54,12 +58,16 @@ export default async function DashboardPage() {
   const ruralCount = calcsByType.find((c) => c.type === "RURAL_TAX")?._count ?? 0;
   const rhCount = calcsByType.find((c) => c.type === "RH_CLT")?._count ?? 0;
 
+  // Always use DB planTier — JWT may be stale after upgrade
+  const planTier =
+    session!.user.role === "ADMIN" ? "ENTERPRISE" : (subscription?.plan.tier ?? "FREE");
+
   const planLabels: Record<string, string> = {
     FREE: "Gratuito",
     PRO: "Profissional",
     ENTERPRISE: "Profissional",
   };
-  const planLabel = planLabels[session!.user.planTier];
+  const planLabel = planLabels[planTier];
 
   // Serialize Prisma Decimal/Date types to plain values before rendering
   const serializedCalcs = recentCalcs.map((calc) => ({
@@ -72,7 +80,7 @@ export default async function DashboardPage() {
     totalCost: calc.totalCost ? Number(calc.totalCost) : null,
   }));
 
-  const isPro = ["PRO", "ENTERPRISE"].includes(session!.user.planTier);
+  const isPro = ["PRO", "ENTERPRISE"].includes(planTier);
 
   return (
     <div className="space-y-6">
@@ -139,17 +147,17 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Plano atual</p>
                 <p className="text-xl font-bold mt-1">{planLabel}</p>
-                {session!.user.planTier === "FREE" && (
+                {planTier === "FREE" && (
                   <Link href="/pricing" className="text-xs text-primary hover:underline mt-0.5 block">
                     Fazer upgrade →
                   </Link>
                 )}
               </div>
               <Badge
-                variant={session!.user.planTier === "FREE" ? "secondary" : "default"}
+                variant={planTier === "FREE" ? "secondary" : "default"}
                 className="text-xs"
               >
-                {session!.user.planTier === "FREE" ? "FREE" : "PRO"}
+                {planTier === "FREE" ? "FREE" : "PRO"}
               </Badge>
             </div>
           </CardContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { usePlanTier } from "@/components/providers/PlanProvider";
 import type { PlanTier } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +22,9 @@ interface SubscriptionGateProps {
 
 export function SubscriptionGate({ requiredPlan, children, featureName }: SubscriptionGateProps) {
   const { data: session } = useSession();
-  const userPlan = session?.user.planTier ?? "FREE";
+  // PlanProvider (server-read DB value) takes precedence over stale JWT
+  const contextPlan = usePlanTier();
+  const userPlan = contextPlan ?? session?.user.planTier ?? "FREE";
   const isAdmin = session?.user.role === "ADMIN";
 
   if (isAdmin || PLAN_ORDER[userPlan] >= PLAN_ORDER[requiredPlan]) {
