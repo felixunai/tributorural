@@ -25,6 +25,15 @@ export async function POST(req: Request) {
   const userId = session.user.id;
 
   try {
+    // Validate that the price is recurring (required for subscription mode)
+    const price = await stripe.prices.retrieve(priceId);
+    if (price.type !== "recurring") {
+      return NextResponse.json(
+        { error: "O preço anual está configurado como pagamento único no Stripe. Recrie o preço com cobrança recorrente (intervalo: ano) no painel do Stripe." },
+        { status: 400 }
+      );
+    }
+
     // Get or create Stripe customer
     let stripeCustomerId: string | undefined;
     const subscription = await prisma.subscription.findUnique({
