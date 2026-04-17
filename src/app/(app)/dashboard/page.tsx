@@ -57,7 +57,7 @@ export default async function DashboardPage() {
 
   const ruralCount     = calcsByType.find((c) => c.type === "RURAL_TAX")?._count ?? 0;
   const rhCount        = calcsByType.find((c) => c.type === "RH_CLT")?._count ?? 0;
-  const rescisaoCount  = calcsByType.find((c) => c.type === "RESCISAO")?._count ?? 0;
+  const rescisaoCount  = calcsByType.find((c) => (c.type as string) === "RESCISAO")?._count ?? 0;
 
   // Always use DB planTier — JWT may be stale after upgrade
   const planTier =
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
       {isPro && (
         <DashboardCharts
           calcsByDay={calcsByDay}
-          calcsByType={{ ruralCount, rhCount }}
+          calcsByType={{ ruralCount, rhCount, rescisaoCount }}
         />
       )}
 

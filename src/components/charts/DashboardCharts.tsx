@@ -19,15 +19,16 @@ import { ptBR } from "date-fns/locale";
 
 interface DashboardChartsProps {
   calcsByDay: { date: string; count: number }[];
-  calcsByType: { ruralCount: number; rhCount: number };
+  calcsByType: { ruralCount: number; rhCount: number; rescisaoCount: number };
 }
 
-const PIE_COLORS = ["#3b82f6", "#10b981"];
+const PIE_COLORS = ["#3b82f6", "#10b981", "#f97316"];
 
 export function DashboardCharts({ calcsByDay, calcsByType }: DashboardChartsProps) {
   const pieData = [
     { name: "Impostos Rurais", value: calcsByType.ruralCount },
     { name: "Custo CLT", value: calcsByType.rhCount },
+    { name: "Rescisões", value: calcsByType.rescisaoCount },
   ].filter((d) => d.value > 0);
 
   const barData = calcsByDay.map((d) => ({

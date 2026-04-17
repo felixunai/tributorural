@@ -21,7 +21,7 @@ export default function CalculadoraRescisaoPage() {
       type: "RESCISAO",
       title: title || `Rescisão — ${formatBRL(result.totalLiquido)}`,
       grossSalary: result.grossSalary,
-      totalCost: result.totalBruto,
+      totalCost: result.totalLiquido,
       admissionDate: snapshot.admissionDate,
       terminationDate: snapshot.terminationDate,
       tipoRescisao: snapshot.tipoRescisao,

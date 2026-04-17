@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateRhClt } from "@/lib/tax/rhClt";
-import { getActiveTaxConfig } from "@/lib/tax/taxConfig";
+import { getActiveTaxConfig } from "@/lib/tax/taxConfigServer";
 import { z } from "zod";
 
 const schema = z.object({

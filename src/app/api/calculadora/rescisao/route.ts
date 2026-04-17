@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { calcRescisao } from "@/lib/tax/rescisao";
-import { getActiveTaxConfig } from "@/lib/tax/taxConfig";
+import { getActiveTaxConfig } from "@/lib/tax/taxConfigServer";
 
 const schema = z.object({
   grossSalary: z.number().positive(),
