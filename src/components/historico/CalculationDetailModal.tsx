@@ -76,12 +76,15 @@ export function CalculationDetailModal({ id, onClose }: CalculationDetailModalPr
     const snap = calc.ratesSnapshot as Record<string, unknown>;
 
     if (calc.type === "RURAL_TAX") {
-      const result = calculateRuralTax({
+      const stored = snap.result as Parameters<typeof RuralTaxResult>[0]["result"] | undefined;
+      const result = stored ?? calculateRuralTax({
         saleValue: Number(calc.saleValue),
         icmsRate: Number(snap.icmsRate ?? 0),
+        icmsRegime: (snap.icmsRegime as "normal" | "diferido" | "isento") ?? "normal",
         pisRate: Number(snap.pisRate ?? 0),
         cofinsRate: Number(snap.cofinsRate ?? 0),
         funruralRate: Number(snap.funruralRate ?? 0),
+        regimeVendedor: (snap.regimeVendedor as "produtor-pf" | "produtor-pj" | "empresa-presumido" | "empresa-real") ?? "produtor-pf",
       });
       return (
         <RuralTaxResult

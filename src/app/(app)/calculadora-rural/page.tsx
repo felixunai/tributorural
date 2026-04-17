@@ -45,7 +45,7 @@ export default function CalculadoraRuralPage() {
       funruralAmount: result.funruralAmount,
       totalTaxAmount: result.totalTax,
       effectiveRate: result.effectiveRate,
-      ratesSnapshot: snapshot,
+      ratesSnapshot: { ...snapshot, result },
     };
 
     const res = await fetch("/api/calculations", {

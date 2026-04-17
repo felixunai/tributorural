@@ -11,7 +11,8 @@ const schema = z.object({
   originState: z.string(),
   destState: z.string(),
   saleValue: z.number().positive(),
-  funruralType: z.enum(["funrural-pf", "funrural-pj"]),
+  regimeVendedor: z.enum(["produtor-pf", "produtor-pj", "empresa-presumido", "empresa-real"]),
+  icmsRegime: z.enum(["normal", "diferido", "isento"]),
 });
 
 const FREE_LIMIT = 5;
@@ -45,7 +46,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.issues }, { status: 400 });
   }
 
-  const { productId, originState, destState, saleValue, funruralType } = parsed.data;
+  const { productId, originState, destState, saleValue, regimeVendedor, icmsRegime } = parsed.data;
+
+  // FUNRURAL: PF para produtor-pf, PJ para produtor-pj; empresas não recolhem
+  const funruralId = regimeVendedor === "produtor-pj" ? "funrural-pj" : "funrural-pf";
 
   const [product, icmsRate, funrural] = await Promise.all([
     prisma.ruralProduct.findUnique({ where: { id: productId } }),
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
         },
       },
     }),
-    prisma.funruralRate.findUnique({ where: { id: funruralType } }),
+    prisma.funruralRate.findUnique({ where: { id: funruralId } }),
   ]);
 
   if (!product) return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
@@ -75,9 +79,11 @@ export async function POST(req: Request) {
   const result = calculateRuralTax({
     saleValue,
     icmsRate: Number(icmsRate.rate),
+    icmsRegime,
     pisRate: Number(product.pisRate),
     cofinsRate: Number(product.cofinsRate),
-    funruralRate: Number(funrural.rate),
+    funruralRate: funrural ? Number(funrural.rate) : 0,
+    regimeVendedor,
   });
 
   // Increment usage counter for FREE users after successful calculation
@@ -101,7 +107,8 @@ export async function POST(req: Request) {
       pisRate: Number(product.pisRate),
       cofinsRate: Number(product.cofinsRate),
       funruralRate: Number(funrural.rate),
-      funruralType,
+      regimeVendedor,
+      icmsRegime,
     },
   });
 }

@@ -19,7 +19,8 @@ const schema = z.object({
   originState: z.string().min(1, "Selecione o estado de origem"),
   destState: z.string().min(1, "Selecione o estado de destino"),
   saleValue: z.string().min(1, "Informe o valor de venda"),
-  funruralType: z.enum(["funrural-pf", "funrural-pj"]),
+  regimeVendedor: z.enum(["produtor-pf", "produtor-pj", "empresa-presumido", "empresa-real"]),
+  icmsRegime: z.enum(["normal", "diferido", "isento"]),
 }).refine(
   (d) => d.originState === "" || d.destState === "" || d.originState !== d.destState,
   { message: "Estado de destino deve ser diferente do estado de origem", path: ["destState"] }
@@ -54,7 +55,8 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
       originState: "",
       destState: "",
       saleValue: "",
-      funruralType: "funrural-pf",
+      regimeVendedor: "produtor-pf",
+      icmsRegime: "normal",
     },
   });
 
@@ -183,41 +185,61 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
             </div>
           </div>
 
+          <div className="space-y-1.5">
+            <Label>Valor de venda (R$)</Label>
+            <Controller
+              name="saleValue"
+              control={control}
+              render={({ field }) => (
+                <CurrencyInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="100.000,00"
+                />
+              )}
+            />
+            {errors.saleValue && <p className="text-xs text-destructive">{errors.saleValue.message}</p>}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Valor de venda (R$)</Label>
+              <Label>Regime do vendedor</Label>
               <Controller
-                name="saleValue"
-                control={control}
-                render={({ field }) => (
-                  <CurrencyInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    placeholder="100.000,00"
-                  />
-                )}
-              />
-              {errors.saleValue && <p className="text-xs text-destructive">{errors.saleValue.message}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Tipo FUNRURAL</Label>
-              <Controller
-                name="funruralType"
+                name="regimeVendedor"
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={(v) => { if (v !== null) field.onChange(v); }}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="funrural-pf">Pessoa Física (1,2%)</SelectItem>
-                      <SelectItem value="funrural-pj">Pessoa Jurídica (1,5%)</SelectItem>
+                      <SelectItem value="produtor-pf">Produtor Rural — Pessoa Física</SelectItem>
+                      <SelectItem value="produtor-pj">Produtor Rural — Pessoa Jurídica</SelectItem>
+                      <SelectItem value="empresa-presumido">Empresa — Lucro Presumido</SelectItem>
+                      <SelectItem value="empresa-real">Empresa — Lucro Real</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
               />
+              <p className="text-xs text-muted-foreground">Define FUNRURAL e PIS/COFINS aplicáveis</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Regime ICMS</Label>
+              <Controller
+                name="icmsRegime"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={(v) => { if (v !== null) field.onChange(v); }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal (alíquota interestadual)</SelectItem>
+                      <SelectItem value="diferido">Diferido (0% — etapa seguinte)</SelectItem>
+                      <SelectItem value="isento">Isento (0% — convênio/legislação)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-xs text-muted-foreground">Commodities agrícolas frequentemente têm ICMS diferido</p>
             </div>
           </div>
 
