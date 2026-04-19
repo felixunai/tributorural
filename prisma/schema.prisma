@@ -92,6 +92,7 @@ model User {
   subscription     Subscription?
   calculations     Calculation[]
   ruralCalcUsages  RuralCalcUsage[]
+  chatUsages       ChatUsage[]
 
   @@index([email])
   @@index([role])
@@ -301,6 +302,18 @@ model CommodityCache {
   id        String   @id @default("main")
   data      Json
   fetchedAt DateTime
+}
+
+// Tracks AI chat messages per user per day (daily limit enforcement)
+model ChatUsage {
+  id     String @id @default(cuid())
+  userId String
+  date   String // "2026-04-19"
+  count  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
 }
 
 // Tracks rural tax computations for FREE plan rate-limiting

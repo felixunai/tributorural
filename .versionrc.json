@@ -1,0 +1,14 @@
+{
+  "types": [
+    { "type": "feat",     "section": "Novas Funcionalidades" },
+    { "type": "fix",      "section": "Correções de Bugs" },
+    { "type": "perf",     "section": "Melhorias de Performance" },
+    { "type": "refactor", "section": "Refatoração", "hidden": false },
+    { "type": "chore",    "section": "Manutenção", "hidden": true },
+    { "type": "docs",     "section": "Documentação", "hidden": true },
+    { "type": "style",    "hidden": true },
+    { "type": "test",     "hidden": true }
+  ],
+  "commitUrlFormat": "https://github.com/felixunai/tributorural/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/felixunai/tributorural/compare/{{previousTag}}...{{currentTag}}"
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { Topbar } from "./Topbar";
+import { ChatWidget } from "@/components/shared/ChatWidget";
 import type { PlanTier } from "@prisma/client";
 
 interface AppShellProps {
@@ -37,6 +38,7 @@ export function AppShell({ planTier, isAdmin, children }: AppShellProps) {
         <Topbar onMenuToggle={() => setSidebarOpen((o) => !o)} />
         <main className="flex-1 p-4 md:p-6 bg-muted/20">{children}</main>
       </div>
+      <ChatWidget />
     </div>
   );
 }
