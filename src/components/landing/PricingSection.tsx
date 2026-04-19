@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const proFeatures = [
+  "Assistente tributário com IA (30/dia)",
   "Calculadora Rural ilimitada",
   "Calculadora de Custo CLT",
   "Calculadora de Rescisão CLT",

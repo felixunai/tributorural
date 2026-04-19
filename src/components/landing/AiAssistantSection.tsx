@@ -52,7 +52,7 @@ export function AiAssistantSection() {
                 "Respostas baseadas na legislação tributária rural brasileira",
                 "Contexto do agronegócio: soja, milho, boi gordo, café e mais",
                 "Disponível 24h, todos os dias, direto no painel",
-                "Limite de 30 perguntas por dia no plano Profissional",
+                "30 perguntas por dia incluídas no plano Profissional",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-sm text-muted-foreground">
                   <div className="mt-0.5 h-5 w-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
@@ -74,7 +74,7 @@ export function AiAssistantSection() {
 
             <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Lock className="h-3.5 w-3.5" />
-              Disponível nos planos Profissional e Empresarial
+              Exclusivo do plano Profissional
             </p>
           </div>
 
