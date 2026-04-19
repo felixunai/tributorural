@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { StatsBar } from "@/components/landing/StatsBar";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { AiAssistantSection } from "@/components/landing/AiAssistantSection";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { CtaSection } from "@/components/landing/CtaSection";
 
@@ -14,6 +15,7 @@ export default function HomePage() {
         <HeroSection />
         <StatsBar />
         <FeaturesSection />
+        <AiAssistantSection />
         <section className="py-20">
           <PricingSection />
         </section>
