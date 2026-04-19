@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL, formatDate } from "@/lib/utils";
-import { Download, Trash2, FileText, ChevronLeft, ChevronRight, Calculator, Users, FileX2, Eye } from "lucide-react";
+import { FileSpreadsheet, Trash2, ChevronLeft, ChevronRight, Calculator, Users, FileX2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { CalculationDetailModal } from "./CalculationDetailModal";
 
@@ -52,7 +52,7 @@ export function HistoricoClient() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  const [exporting, setExporting] = useState(false);
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
@@ -88,21 +88,25 @@ export function HistoricoClient() {
     }
   }
 
-  async function handleExportCSV() {
-    setExporting(true);
+  async function handleExportExcel(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    setExportingId(id);
     try {
-      const params = new URLSearchParams({ ...(typeFilter !== "ALL" ? { type: typeFilter } : {}) });
-      const res = await fetch(`/api/export/csv?${params}`);
+      const res = await fetch(`/api/export/excel/${id}`);
       if (!res.ok) { toast.error("Erro ao exportar"); return; }
       const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="(.+?)"/);
+      const filename = match?.[1] ?? `tributo-rural-${id}.xlsx`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `tributo-rural-historico-${new Date().toISOString().split("T")[0]}.csv`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
+      toast.success("Excel gerado com sucesso");
     } finally {
-      setExporting(false);
+      setExportingId(null);
     }
   }
 
@@ -128,12 +132,11 @@ export function HistoricoClient() {
     return null;
   }
 
-  const canExportCsv = ["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "");
-  const canExportPdf = ["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "");
+  const canExport = ["PRO", "ENTERPRISE"].includes(session?.user.planTier ?? "");
 
   return (
     <div className="space-y-4">
-      {/* Filters + export */}
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v ?? "ALL"); setPage(1); }}>
           <SelectTrigger className="sm:w-52">
@@ -150,21 +153,6 @@ export function HistoricoClient() {
         </Select>
 
         <p className="text-sm text-muted-foreground self-center">{total} cálculo{total !== 1 ? "s" : ""}</p>
-
-        <div className="flex gap-2 sm:ml-auto">
-          {canExportCsv && (
-            <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={exporting} className="flex-1 sm:flex-none">
-              <Download className="mr-2 h-4 w-4" />
-              {exporting ? "Exportando..." : "CSV"}
-            </Button>
-          )}
-          {canExportPdf && (
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-              <FileText className="mr-2 h-4 w-4" />
-              PDF
-            </Button>
-          )}
-        </div>
       </div>
 
       {/* List */}
@@ -233,6 +221,18 @@ export function HistoricoClient() {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    {canExport && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-green-600 h-8 w-8"
+                        onClick={(e) => handleExportExcel(e, item.id)}
+                        disabled={exportingId === item.id}
+                        title="Exportar todos os cálculos deste item em Excel"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
