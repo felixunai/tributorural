@@ -9,9 +9,19 @@ import {
   Lock,
   FileX2,
   TrendingUp,
+  BotMessageSquare,
 } from "lucide-react";
 
 const features = [
+  {
+    icon: BotMessageSquare,
+    title: "Assistente tributário com IA",
+    description:
+      "Tire dúvidas sobre ICMS, FUNRURAL, PIS/COFINS e CLT diretamente no painel. Respostas instantâneas baseadas na legislação rural brasileira. Exclusivo do plano Profissional.",
+    accent: "oklch(0.60 0.20 290)",
+    accentLight: "oklch(0.60 0.20 290 / 0.10)",
+    accentBorder: "oklch(0.60 0.20 290 / 0.25)",
+  },
   {
     icon: Calculator,
     title: "702 alíquotas ICMS",
