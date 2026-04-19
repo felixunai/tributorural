@@ -37,6 +37,9 @@ export function AppShell({ planTier, isAdmin, children }: AppShellProps) {
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar onMenuToggle={() => setSidebarOpen((o) => !o)} />
         <main className="flex-1 p-4 md:p-6 bg-muted/20">{children}</main>
+        <footer className="px-4 md:px-6 py-2 text-xs text-muted-foreground/50 text-right">
+          v{process.env.NEXT_PUBLIC_APP_VERSION}
+        </footer>
       </div>
       <ChatWidget />
     </div>
