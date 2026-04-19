@@ -96,11 +96,19 @@ export async function GET(
 
   const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" })
 
-  const label = (ref.type === "RURAL_TAX"
+  const rawLabel = (ref.type === "RURAL_TAX"
     ? calculations[0]?.product?.name
     : calculations[0]?.title) ?? "calculo"
 
-  const filename = `tributo-rural-${label.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.xlsx`
+  const safeLabel = rawLabel
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")  // remove acentos
+    .replace(/[^a-zA-Z0-9\s-]/g, "")  // remove caracteres não-ASCII
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+
+  const filename = `tributo-rural-${safeLabel}-${new Date().toISOString().slice(0, 10)}.xlsx`
 
   return new Response(buffer, {
     headers: {

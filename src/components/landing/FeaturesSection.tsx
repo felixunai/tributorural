@@ -78,9 +78,9 @@ const features = [
   },
   {
     icon: Download,
-    title: "Exportar CSV e PDF",
+    title: "Exportar para Excel",
     description:
-      "Baixe seus cálculos em CSV para análise no Excel ou em PDF para relatórios e apresentações profissionais a clientes.",
+      "Exporte todos os cálculos de um produto ou funcionário direto para planilha Excel (.xlsx), pronto para análise e relatórios profissionais.",
     accent: "oklch(0.62 0.17 280)",
     accentLight: "oklch(0.62 0.17 280 / 0.1)",
     accentBorder: "oklch(0.62 0.17 280 / 0.25)",

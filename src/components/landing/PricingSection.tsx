@@ -15,7 +15,7 @@ const proFeatures = [
   "Calculadora de Custo CLT",
   "Calculadora de Rescisão CLT",
   "Histórico completo ilimitado",
-  "Exportar CSV e PDF",
+  "Exportar histórico para Excel",
   "Cotações de commodities B3/CBOT",
   "Suporte por email",
 ];
@@ -31,7 +31,7 @@ const freeExcluded = [
   "Calculadora de Custo CLT",
   "Calculadora de Rescisão CLT",
   "Histórico de cálculos",
-  "Exportar CSV/PDF",
+  "Exportar para Excel",
   "Cotações de commodities",
 ];
 
