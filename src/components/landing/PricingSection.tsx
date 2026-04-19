@@ -147,6 +147,9 @@ export function PricingSection() {
                 <span className="text-sm mb-2 text-white/60">/mês</span>
               </div>
               <p className="text-xs mt-1 text-white/50">Cobrado mensalmente</p>
+              <p className="text-xs mt-2 bg-white/10 rounded-full px-3 py-1 inline-block text-white/80">
+                ☕ Menos que um cafezinho por dia
+              </p>
               <Button
                 className="w-full mt-6 rounded-xl font-semibold py-2.5 btn-lime border-0"
                 onClick={() => handleSubscribe("monthly")}
