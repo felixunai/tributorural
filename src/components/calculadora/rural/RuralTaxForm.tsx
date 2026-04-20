@@ -10,6 +10,7 @@ import { CurrencyInput, parseBRL } from "@/components/ui/currency-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StateSelector } from "@/components/shared/StateSelector";
+import { ProductCombobox } from "./ProductCombobox";
 import { Loader2, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import type { RuralTaxResult } from "@/lib/tax/ruralTax";
@@ -67,14 +68,6 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
       .catch(console.error);
   }, []);
 
-  // Group products by category
-  const grouped = products.reduce<Record<string, Product[]>>((acc, p) => {
-    const cat = p.category ?? "Outros";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(p);
-    return acc;
-  }, {});
-
   async function onSubmit(data: FormData) {
     setLoading(true);
     try {
@@ -114,39 +107,17 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-1.5">
-            <Label>Produto rural</Label>
+            <Label>Produto</Label>
             <Controller
               name="productId"
               control={control}
-              render={({ field }) => {
-                const selected = products.find((p) => p.id === field.value);
-                return (
-                  <Select value={field.value} onValueChange={(v) => { if (v !== null) field.onChange(v); }}>
-                    <SelectTrigger>
-                      {selected ? (
-                        <span className="flex-1 text-left truncate">{selected.name}</span>
-                      ) : (
-                        <span className="flex-1 text-left text-muted-foreground">Selecione o produto...</span>
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(grouped).map(([cat, prods]) => (
-                        <div key={cat}>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            {cat}
-                          </div>
-                          {prods.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              <span>{p.name}</span>
-                              <span className="text-muted-foreground text-xs ml-1">NCM {p.ncmCode}</span>
-                            </SelectItem>
-                          ))}
-                        </div>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              }}
+              render={({ field }) => (
+                <ProductCombobox
+                  products={products}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
             />
             {errors.productId && <p className="text-xs text-destructive">{errors.productId.message}</p>}
           </div>
