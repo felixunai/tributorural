@@ -1,8 +1,8 @@
 export type RegimeVendedor =
-  | "produtor-pf"       // Produtor rural PF  — FUNRURAL 1,2% / PIS-COFINS 0% (Lei 10.925/2004)
-  | "produtor-pj"       // Produtor rural PJ  — FUNRURAL 1,5% / PIS-COFINS 0%
-  | "empresa-presumido" // Empresa lucro presumido — sem FUNRURAL / PIS 0,65% / COFINS 3%
-  | "empresa-real";     // Empresa lucro real      — sem FUNRURAL / PIS 1,65% / COFINS 7,6%
+  | "produtor-pf"      // Produtor rural PF — FUNRURAL 1,2% / PIS-COFINS 0% (Lei 10.925/2004)
+  | "lucro-presumido"  // Empresa Lucro Presumido — sem FUNRURAL / PIS 0,65% / COFINS 3%
+  | "lucro-real"       // Empresa Lucro Real — sem FUNRURAL / PIS 1,65% / COFINS 7,6%
+  | "simples-nacional"; // Simples Nacional — PIS/COFINS incluídos no DAS / sem FUNRURAL
 
 export type IcmsRegime =
   | "normal"   // Alíquota interestadual padrão (7% ou 12%)
@@ -50,10 +50,11 @@ export interface RuralTaxResult {
   observations: RuralTaxObservation[];
 }
 
-// PIS/COFINS por regime para empresas (quando não produtor rural)
+// PIS/COFINS por regime para empresas (quando não produtor rural PF)
 const EMPRESA_RATES: Record<string, { pis: number; cofins: number }> = {
-  "empresa-presumido": { pis: 0.0065, cofins: 0.03 },
-  "empresa-real":      { pis: 0.0165, cofins: 0.076 },
+  "lucro-presumido":  { pis: 0.0065, cofins: 0.03 },
+  "lucro-real":       { pis: 0.0165, cofins: 0.076 },
+  "simples-nacional": { pis: 0,      cofins: 0 }, // incluídos no DAS
 };
 
 export function calculateRuralTax(input: RuralTaxInput): RuralTaxResult {
@@ -67,8 +68,8 @@ export function calculateRuralTax(input: RuralTaxInput): RuralTaxResult {
   let pisRateApplied: number;
   let cofinsRateApplied: number;
 
-  if (regimeVendedor === "produtor-pf" || regimeVendedor === "produtor-pj") {
-    // Produtor rural: usa as alíquotas do produto (0% para in natura — Lei 10.925/2004)
+  if (regimeVendedor === "produtor-pf") {
+    // Produtor rural PF: usa as alíquotas do produto (0% para in natura — Lei 10.925/2004)
     pisRateApplied    = pisRate;
     cofinsRateApplied = cofinsRate;
   } else {
@@ -81,10 +82,7 @@ export function calculateRuralTax(input: RuralTaxInput): RuralTaxResult {
 
   // ── FUNRURAL efetivo ──────────────────────────────────────────────
   // Empresas não são produtores rurais — não recolhem FUNRURAL sobre receita bruta
-  const funruralRateApplied =
-    regimeVendedor === "produtor-pf" || regimeVendedor === "produtor-pj"
-      ? funruralRate
-      : 0;
+  const funruralRateApplied = regimeVendedor === "produtor-pf" ? funruralRate : 0;
   const funruralAmount = saleValue * funruralRateApplied;
 
   // ── Totais ────────────────────────────────────────────────────────
@@ -121,10 +119,16 @@ export function calculateRuralTax(input: RuralTaxInput): RuralTaxResult {
     });
   }
 
-  if (regimeVendedor === "empresa-presumido" || regimeVendedor === "empresa-real") {
+  if (regimeVendedor === "lucro-presumido" || regimeVendedor === "lucro-real") {
     observations.push({
       type: "warning",
       text: "Empresas que vendem produtos in natura podem ter suspensão de PIS/COFINS (Lei 10.925/2004, art. 9°). Verifique se a operação se enquadra antes de recolher as alíquotas indicadas.",
+    });
+  }
+  if (regimeVendedor === "simples-nacional") {
+    observations.push({
+      type: "info",
+      text: "Simples Nacional: PIS e COFINS são recolhidos via DAS e não incidem separadamente. O ICMS interestadual também é recolhido pelo DAS conforme tabela do Simples — a alíquota exibida é referencial.",
     });
   }
 

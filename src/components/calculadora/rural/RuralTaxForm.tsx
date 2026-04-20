@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ const schema = z.object({
   originState: z.string().min(1, "Selecione o estado de origem"),
   destState: z.string().min(1, "Selecione o estado de destino"),
   saleValue: z.string().min(1, "Informe o valor de venda"),
-  regimeVendedor: z.enum(["produtor-pf", "produtor-pj", "empresa-presumido", "empresa-real"]),
+  regimeVendedor: z.enum(["produtor-pf", "lucro-presumido", "lucro-real", "simples-nacional"]),
   icmsRegime: z.enum(["normal", "diferido", "isento"]),
 }).refine(
   (d) => d.originState === "" || d.destState === "" || d.originState !== d.destState,
@@ -34,6 +34,8 @@ interface Product {
   name: string;
   ncmCode: string;
   category: string | null;
+  pisRate: number;
+  cofinsRate: number;
 }
 
 interface RuralTaxFormProps {
@@ -45,9 +47,9 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
   const [loading, setLoading] = useState(false);
 
   const {
-    register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -57,9 +59,11 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
       destState: "",
       saleValue: "",
       regimeVendedor: "produtor-pf",
-      icmsRegime: "normal",
+      icmsRegime: "diferido",
     },
   });
+
+  const selectedProductId = useWatch({ control, name: "productId" });
 
   useEffect(() => {
     fetch("/api/products")
@@ -67,6 +71,15 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
       .then(setProducts)
       .catch(console.error);
   }, []);
+
+  // Auto-detect ICMS regime based on product PIS/COFINS rates
+  useEffect(() => {
+    if (!selectedProductId || products.length === 0) return;
+    const product = products.find((p) => p.id === selectedProductId);
+    if (!product) return;
+    const isInNatura = Number(product.pisRate) === 0 && Number(product.cofinsRate) === 0;
+    setValue("icmsRegime", isInNatura ? "diferido" : "normal");
+  }, [selectedProductId, products, setValue]);
 
   async function onSubmit(data: FormData) {
     setLoading(true);
@@ -183,10 +196,10 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
                   <Select value={field.value} onValueChange={(v) => { if (v !== null) field.onChange(v); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="produtor-pf">Produtor Rural — Pessoa Física</SelectItem>
-                      <SelectItem value="produtor-pj">Produtor Rural — Pessoa Jurídica</SelectItem>
-                      <SelectItem value="empresa-presumido">Empresa — Lucro Presumido</SelectItem>
-                      <SelectItem value="empresa-real">Empresa — Lucro Real</SelectItem>
+                      <SelectItem value="produtor-pf">Tributos produtor rural pessoa física</SelectItem>
+                      <SelectItem value="lucro-presumido">Tributos Lucro Presumido</SelectItem>
+                      <SelectItem value="lucro-real">Tributos Lucro Real</SelectItem>
+                      <SelectItem value="simples-nacional">Tributos Simples Nacional</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

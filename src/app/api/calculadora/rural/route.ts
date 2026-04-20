@@ -11,7 +11,7 @@ const schema = z.object({
   originState: z.string(),
   destState: z.string(),
   saleValue: z.number().positive(),
-  regimeVendedor: z.enum(["produtor-pf", "produtor-pj", "empresa-presumido", "empresa-real"]),
+  regimeVendedor: z.enum(["produtor-pf", "lucro-presumido", "lucro-real", "simples-nacional"]),
   icmsRegime: z.enum(["normal", "diferido", "isento"]),
 });
 
@@ -48,8 +48,8 @@ export async function POST(req: Request) {
 
   const { productId, originState, destState, saleValue, regimeVendedor, icmsRegime } = parsed.data;
 
-  // FUNRURAL: PF para produtor-pf, PJ para produtor-pj; empresas não recolhem
-  const funruralId = regimeVendedor === "produtor-pj" ? "funrural-pj" : "funrural-pf";
+  // FUNRURAL: somente produtor rural PF; demais regimes não recolhem
+  const funruralId = "funrural-pf";
 
   const [product, icmsRate, funrural] = await Promise.all([
     prisma.ruralProduct.findUnique({ where: { id: productId } }),

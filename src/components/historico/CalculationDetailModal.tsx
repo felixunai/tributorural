@@ -84,7 +84,7 @@ export function CalculationDetailModal({ id, onClose }: CalculationDetailModalPr
         pisRate: Number(snap.pisRate ?? 0),
         cofinsRate: Number(snap.cofinsRate ?? 0),
         funruralRate: Number(snap.funruralRate ?? 0),
-        regimeVendedor: (snap.regimeVendedor as "produtor-pf" | "produtor-pj" | "empresa-presumido" | "empresa-real") ?? "produtor-pf",
+        regimeVendedor: (snap.regimeVendedor as "produtor-pf" | "lucro-presumido" | "lucro-real" | "simples-nacional") ?? "produtor-pf",
       });
       return (
         <RuralTaxResult
