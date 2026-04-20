@@ -109,42 +109,44 @@ async function seedFunruralRates() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ruralProducts = [
-  // GRÃOS
-  { name: "Soja em Grão", ncmCode: "12010090", pisRate: 0.0, cofinsRate: 0.0, category: "Grãos", description: "Soja em grão, mesmo triturada" },
-  { name: "Milho em Grão", ncmCode: "10059010", pisRate: 0.0, cofinsRate: 0.0, category: "Grãos", description: "Milho para outros usos" },
-  { name: "Trigo em Grão", ncmCode: "10019900", pisRate: 0.0, cofinsRate: 0.0, category: "Grãos", description: "Trigo (exceto trigo duro/durum)" },
-  { name: "Arroz em Casca", ncmCode: "10061000", pisRate: 0.0, cofinsRate: 0.0, category: "Grãos", description: "Arroz com casca (paddy)" },
-  { name: "Feijão", ncmCode: "07133390", pisRate: 0.0, cofinsRate: 0.0, category: "Grãos", description: "Feijão — espécies Vigna e Phaseolus" },
-  { name: "Sorgo em Grão", ncmCode: "10070090", pisRate: 0.0, cofinsRate: 0.0, category: "Grãos", description: "Sorgo granífero" },
-  { name: "Girassol em Grão", ncmCode: "12060090", pisRate: 0.0, cofinsRate: 0.0, category: "Grãos", description: "Sementes de girassol" },
-  { name: "Algodão em Pluma", ncmCode: "52010000", pisRate: 0.0, cofinsRate: 0.0, category: "Fibras", description: "Algodão não cardado nem penteado" },
-  // CARNES
-  { name: "Carne Bovina Resfriada", ncmCode: "02011000", pisRate: 0.0, cofinsRate: 0.0, category: "Carnes", description: "Carcaças e meias-carcaças bovinas refrigeradas" },
-  { name: "Carne Bovina Congelada", ncmCode: "02021000", pisRate: 0.0, cofinsRate: 0.0, category: "Carnes", description: "Carcaças e meias-carcaças bovinas congeladas" },
-  { name: "Carne Suína", ncmCode: "02031100", pisRate: 0.0, cofinsRate: 0.0, category: "Carnes", description: "Carcaças e meias-carcaças suínas" },
-  { name: "Frango Inteiro", ncmCode: "02071100", pisRate: 0.0, cofinsRate: 0.0, category: "Aves", description: "Galos/galinhas não cortados em pedaços, frescos ou refrigerados" },
-  { name: "Ovos de Galinha", ncmCode: "04070011", pisRate: 0.0, cofinsRate: 0.0, category: "Aves", description: "Ovos de galinha para consumo" },
+  // GRÃOS — ICMS diferido na saída do produtor (legislação estadual MT, GO, PR, MS, RS)
+  { name: "Soja em Grão",     ncmCode: "12010090", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Grãos",        description: "Soja em grão, mesmo triturada" },
+  { name: "Milho em Grão",    ncmCode: "10059010", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Grãos",        description: "Milho para outros usos" },
+  { name: "Trigo em Grão",    ncmCode: "10019900", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Grãos",        description: "Trigo (exceto trigo duro/durum)" },
+  { name: "Arroz em Casca",   ncmCode: "10061000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Grãos",        description: "Arroz com casca (paddy)" },
+  { name: "Feijão",           ncmCode: "07133390", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Grãos",        description: "Feijão — espécies Vigna e Phaseolus" },
+  { name: "Sorgo em Grão",    ncmCode: "10070090", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Grãos",        description: "Sorgo granífero" },
+  { name: "Girassol em Grão", ncmCode: "12060090", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Grãos",        description: "Sementes de girassol" },
+  // FIBRAS — diferido na saída do produtor
+  { name: "Algodão em Pluma", ncmCode: "52010000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Fibras",       description: "Algodão não cardado nem penteado" },
+  // CARNES — produto de frigorífico; ICMS normal com redução de base (Conv. ICMS 89/2005)
+  { name: "Carne Bovina Resfriada", ncmCode: "02011000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "normal", category: "Carnes", description: "Carcaças e meias-carcaças bovinas refrigeradas — ICMS normal (redução de base Conv. 89/2005)" },
+  { name: "Carne Bovina Congelada", ncmCode: "02021000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "normal", category: "Carnes", description: "Carcaças e meias-carcaças bovinas congeladas — ICMS normal (redução de base Conv. 89/2005)" },
+  { name: "Carne Suína",            ncmCode: "02031100", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "normal", category: "Carnes", description: "Carcaças e meias-carcaças suínas — ICMS normal com redução de base" },
+  // AVES — frango = saída de frigorífico (normal); ovos = isento (Conv. ICM 44/75)
+  { name: "Frango Inteiro",    ncmCode: "02071100", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "normal",  category: "Aves", description: "Galos/galinhas não cortados em pedaços, frescos ou refrigerados — ICMS normal" },
+  { name: "Ovos de Galinha",   ncmCode: "04070011", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento",  category: "Aves", description: "Ovos de galinha para consumo — isento (Conv. ICM 44/75)" },
   // LÁCTEOS
-  { name: "Leite Cru", ncmCode: "04011000", pisRate: 0.0, cofinsRate: 0.0, category: "Lácteos", description: "Leite cru com teor de matérias gordas ≤ 1%" },
-  { name: "Queijo Mussarela", ncmCode: "04061000", pisRate: 0.0065, cofinsRate: 0.03, category: "Lácteos", description: "Queijo fresco (não curado)" },
-  { name: "Manteiga", ncmCode: "04051000", pisRate: 0.0065, cofinsRate: 0.03, category: "Lácteos", description: "Manteiga de leite de vaca" },
-  // FRUTAS
-  { name: "Laranja", ncmCode: "08051000", pisRate: 0.0, cofinsRate: 0.0, category: "Frutas", description: "Laranjas frescas ou secas" },
-  { name: "Banana", ncmCode: "08030011", pisRate: 0.0, cofinsRate: 0.0, category: "Frutas", description: "Bananas do grupo Nanica/Nanicão" },
-  { name: "Uva de Mesa", ncmCode: "08061000", pisRate: 0.0, cofinsRate: 0.0, category: "Frutas", description: "Uvas frescas" },
-  { name: "Melão", ncmCode: "08071100", pisRate: 0.0, cofinsRate: 0.0, category: "Frutas", description: "Melões frescos" },
-  { name: "Manga", ncmCode: "08045020", pisRate: 0.0, cofinsRate: 0.0, category: "Frutas", description: "Mangas frescas" },
-  { name: "Maçã", ncmCode: "08081000", pisRate: 0.0, cofinsRate: 0.0, category: "Frutas", description: "Maçãs frescas" },
-  // HORTALIÇAS
-  { name: "Tomate", ncmCode: "07020000", pisRate: 0.0, cofinsRate: 0.0, category: "Hortaliças", description: "Tomates frescos ou refrigerados" },
-  { name: "Batata", ncmCode: "07011000", pisRate: 0.0, cofinsRate: 0.0, category: "Hortaliças", description: "Batatas para semente" },
-  { name: "Cebola", ncmCode: "07031000", pisRate: 0.0, cofinsRate: 0.0, category: "Hortaliças", description: "Cebolas e escalônias" },
+  { name: "Leite Cru",        ncmCode: "04011000", pisRate: 0.0,    cofinsRate: 0.0,  icmsDefaultRegime: "diferido", category: "Lácteos", description: "Leite cru — ICMS diferido do produtor para laticínio" },
+  { name: "Queijo Mussarela", ncmCode: "04061000", pisRate: 0.0065, cofinsRate: 0.03, icmsDefaultRegime: "normal",   category: "Lácteos", description: "Queijo fresco (não curado) — produto industrializado, ICMS normal" },
+  { name: "Manteiga",         ncmCode: "04051000", pisRate: 0.0065, cofinsRate: 0.03, icmsDefaultRegime: "normal",   category: "Lácteos", description: "Manteiga de leite de vaca — produto industrializado, ICMS normal" },
+  // FRUTAS — isentas de ICMS (Conv. ICM 44/75, vigente na maioria dos estados)
+  { name: "Laranja",    ncmCode: "08051000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Frutas", description: "Laranjas frescas — isento Conv. ICM 44/75" },
+  { name: "Banana",     ncmCode: "08030011", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Frutas", description: "Bananas do grupo Nanica/Nanicão — isento Conv. ICM 44/75" },
+  { name: "Uva de Mesa",ncmCode: "08061000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Frutas", description: "Uvas frescas — isento Conv. ICM 44/75" },
+  { name: "Melão",      ncmCode: "08071100", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Frutas", description: "Melões frescos — isento Conv. ICM 44/75" },
+  { name: "Manga",      ncmCode: "08045020", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Frutas", description: "Mangas frescas — isento Conv. ICM 44/75" },
+  { name: "Maçã",       ncmCode: "08081000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Frutas", description: "Maçãs frescas — isento Conv. ICM 44/75" },
+  // HORTALIÇAS — isentas de ICMS (Conv. ICM 44/75)
+  { name: "Tomate",         ncmCode: "07020000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Hortaliças", description: "Tomates frescos ou refrigerados — isento Conv. ICM 44/75" },
+  { name: "Batata-Semente", ncmCode: "07011000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Hortaliças", description: "Batatas para semente (insumo agrícola) — isento Conv. ICMS 100/97" },
+  { name: "Cebola",         ncmCode: "07031000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "isento", category: "Hortaliças", description: "Cebolas e escalônias — isento Conv. ICM 44/75" },
   // OUTROS
-  { name: "Cana-de-Açúcar", ncmCode: "12129200", pisRate: 0.0, cofinsRate: 0.0, category: "Energia/Açúcar", description: "Cana-de-açúcar" },
-  { name: "Café em Coco", ncmCode: "09011100", pisRate: 0.0, cofinsRate: 0.0, category: "Bebidas", description: "Café não torrado, não descafeinado" },
-  { name: "Cacau em Amêndoa", ncmCode: "18010000", pisRate: 0.0, cofinsRate: 0.0, category: "Bebidas", description: "Cacau em massa/pasta, não desengordurado" },
-  { name: "Madeira em Tora", ncmCode: "44032000", pisRate: 0.0, cofinsRate: 0.0, category: "Madeira", description: "Madeira de coníferas em toras" },
-  { name: "Eucalipto (Celulose)", ncmCode: "44039900", pisRate: 0.0, cofinsRate: 0.0, category: "Madeira", description: "Outras madeiras em toras (eucalipto)" },
+  { name: "Cana-de-Açúcar",      ncmCode: "12129200", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Energia/Açúcar", description: "Cana-de-açúcar — ICMS diferido do canavieiro para usina" },
+  { name: "Café em Coco",        ncmCode: "09011100", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Bebidas",       description: "Café não torrado, não descafeinado — ICMS diferido do produtor" },
+  { name: "Cacau em Massa/Pasta",ncmCode: "18010000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Bebidas",       description: "Cacau em massa/pasta, não desengordurado (NCM 18010000)" },
+  { name: "Madeira em Tora",     ncmCode: "44032000", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Madeira",       description: "Madeira de coníferas em toras — ICMS diferido na saída do produtor florestal" },
+  { name: "Eucalipto (Celulose)",ncmCode: "44039900", pisRate: 0.0, cofinsRate: 0.0, icmsDefaultRegime: "diferido", category: "Madeira",       description: "Outras madeiras em toras (eucalipto) — ICMS diferido do produtor para celulose" },
 ];
 
 async function seedRuralProducts() {

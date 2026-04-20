@@ -192,10 +192,11 @@ model RuralProduct {
   name        String
   ncmCode     String   @unique
   description String?
-  pisRate     Decimal  @db.Decimal(6, 4)
-  cofinsRate  Decimal  @db.Decimal(6, 4)
-  category    String?
-  isActive    Boolean  @default(true)
+  pisRate           Decimal  @db.Decimal(6, 4)
+  cofinsRate        Decimal  @db.Decimal(6, 4)
+  icmsDefaultRegime String   @default("diferido") // "normal" | "diferido" | "isento"
+  category          String?
+  isActive          Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

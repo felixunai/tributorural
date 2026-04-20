@@ -103,19 +103,19 @@ export function calculateRuralTax(input: RuralTaxInput): RuralTaxResult {
   if (icmsRegime === "diferido") {
     observations.push({
       type: "info",
-      text: "ICMS diferido: o imposto não é recolhido na origem. O recolhimento fica a cargo do adquirente na etapa seguinte da cadeia produtiva.",
+      text: "ICMS diferido: o imposto não é recolhido na saída da origem. O recolhimento fica a cargo do adquirente na etapa seguinte da cadeia produtiva (legislação estadual).",
     });
   }
   if (icmsRegime === "isento") {
     observations.push({
       type: "info",
-      text: "ICMS isento: a operação está amparada por isenção prevista em convênio ICMS ou legislação estadual específica.",
+      text: "ICMS isento: operação amparada por isenção de convênio (ex.: Conv. ICM 44/75 para frutas e hortaliças frescas, Conv. ICMS 100/97 para insumos agropecuários). Confirme a vigência no estado de origem.",
     });
   }
-  if (icmsRegime === "normal" && (icmsRate === 0.07 || icmsRate === 0.12)) {
+  if (icmsRegime === "normal") {
     observations.push({
       type: "warning",
-      text: `Atenção: produtos agrícolas in natura frequentemente têm ICMS diferido ou isento por convênios estaduais. Verifique o benefício fiscal aplicável antes de utilizar este cálculo como referência fiscal.`,
+      text: "ICMS calculado pela alíquota interestadual cheia (7% ou 12%). Carnes e alguns produtos processados podem ter redução de base de cálculo prevista em convênios — o valor exibido pode ser superior ao efetivamente devido.",
     });
   }
 

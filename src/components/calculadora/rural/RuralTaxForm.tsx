@@ -36,6 +36,7 @@ interface Product {
   category: string | null;
   pisRate: number;
   cofinsRate: number;
+  icmsDefaultRegime: string;
 }
 
 interface RuralTaxFormProps {
@@ -72,13 +73,12 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
       .catch(console.error);
   }, []);
 
-  // Auto-detect ICMS regime based on product PIS/COFINS rates
+  // Auto-detect ICMS regime from product's icmsDefaultRegime field
   useEffect(() => {
     if (!selectedProductId || products.length === 0) return;
     const product = products.find((p) => p.id === selectedProductId);
     if (!product) return;
-    const isInNatura = Number(product.pisRate) === 0 && Number(product.cofinsRate) === 0;
-    setValue("icmsRegime", isInNatura ? "diferido" : "normal");
+    setValue("icmsRegime", product.icmsDefaultRegime as "normal" | "diferido" | "isento");
   }, [selectedProductId, products, setValue]);
 
   async function onSubmit(data: FormData) {

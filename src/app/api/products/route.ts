@@ -6,7 +6,7 @@ import { z } from "zod";
 export async function GET() {
   const products = await prisma.ruralProduct.findMany({
     where: { isActive: true },
-    select: { id: true, name: true, ncmCode: true, category: true, pisRate: true, cofinsRate: true },
+    select: { id: true, name: true, ncmCode: true, category: true, pisRate: true, cofinsRate: true, icmsDefaultRegime: true },
     orderBy: [{ category: "asc" }, { name: "asc" }],
   });
 
