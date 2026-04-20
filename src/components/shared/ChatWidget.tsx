@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePlanTier } from "@/components/providers/PlanProvider"
+import ReactMarkdown from "react-markdown"
 import type { ChatMessage } from "@/lib/ai"
 
 interface Message extends ChatMessage {
@@ -143,7 +144,21 @@ export function ChatWidget() {
                       : "bg-muted text-foreground rounded-tl-sm"
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === "user" ? (
+                    msg.content
+                  ) : (
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                        ul: ({ children }) => <ul className="mt-1 mb-1.5 space-y-0.5 list-none">{children}</ul>,
+                        li: ({ children }) => <li className="flex gap-1.5"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" /><span>{children}</span></li>,
+                        ol: ({ children }) => <ol className="mt-1 mb-1.5 space-y-0.5 list-decimal pl-4">{children}</ol>,
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))}

@@ -223,7 +223,7 @@ export function RuralTaxForm({ onResult }: RuralTaxFormProps) {
                   </Select>
                 )}
               />
-              <p className="text-xs text-muted-foreground">Commodities agrícolas frequentemente têm ICMS diferido</p>
+              <p className="text-xs text-muted-foreground">Preenchido automaticamente conforme o produto selecionado</p>
             </div>
           </div>
 
